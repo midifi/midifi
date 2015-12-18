@@ -48,6 +48,14 @@ ctor NoteFall(midi: MidiFile::MidiFile) = {
                 r_height := event.tick_duration.float * values.tick_height;
                 r_width := key.width;
 
+                if key.follows_sharp do
+                    r_width = r_width - values.black_key_width / 2.0f;
+                    xpos = xpos + values.black_key_width / 2.0f;
+                done
+
+                if key.precedes_sharp perform
+                    r_width = r_width - values.black_key_width / 2.0f;
+
                 r := RectangleShape$ Vector2f (r_width, r_height);
                 r.move (xpos, ypos);
                 r.set_fill_color Colors::Blue;
