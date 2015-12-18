@@ -1,6 +1,8 @@
 include 'stl/stl_vector';
 
 rename fun mkvec[T] = Stl_Vector::create[T];
+// XXX: Not type-safe in the Felix world!
+proc set_vec_iterator[I,T]: I * T = '*$1 = $2;';
 
 
 fun x_offset(octave: int, k: Key) =>
@@ -9,6 +11,21 @@ fun x_offset(octave: int, k: Key) =>
     if k.is_sharp
     then base_x + values.white_key_width - values.black_key_width / 2.0f
     else base_x endif;
+
+
+struct NoteFall {
+    notes: stl_vector[RectangleShape];
+}
+
+ctor NoteFall(midi: MidiFile::MidiFile) = {
+    self := NoteFall (#mkvec[RectangleShape]);
+
+    return self;
+}
+
+proc draw_onto(self: NoteFall, w: RenderWindow) {
+    /* ; */
+}
 
 
 struct Keyboard {
@@ -53,12 +70,14 @@ proc draw_onto(self: Keyboard, w: RenderWindow) {
 
 
 struct PlayerScreen {
+    n: NoteFall;
     kb: Keyboard;
 }
 
 ctor PlayerScreen(midi: MidiFile::MidiFile) =>
-    PlayerScreen (#Keyboard);
+    PlayerScreen (NoteFall midi, #Keyboard);
 
 proc draw_onto(self: PlayerScreen, w: RenderWindow) {
+    draw_onto (self.n, w);
     draw_onto (self.kb, w);
 }
