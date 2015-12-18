@@ -7,7 +7,7 @@ proc set_vec_iterator[I,T]: I * T = '*$1 = $2;';
 
 fun key_number_info(k: int) =>
     let base = k - 24 in
-    base / 11, keys.(size$ base % 11);
+    base / 12, keys.(size$ base % 12);
 
 
 fun x_offset(octave: int, k: Key) =>
@@ -56,12 +56,20 @@ ctor NoteFall(midi: MidiFile::MidiFile) = {
 
                 push_back (track, r);
 
-                bottom = max (bottom, ypos);
+                bottom = max (bottom, ypos + r_height);
             done
         done
 
         push_back (self.tracks, track);
     done
+
+    // We need to now flip all the tracks upside-down.
+
+    initial_space := 4.0f * midi.tpq.float * values.tick_height;
+    // XXX: Work around optimizing (see comment in draw_onto).
+    view = *self.view;
+    view.set_center$ Vector2f (0.0f, bottom + initial_space);
+    *self.view = view;
 
     return self;
 }
