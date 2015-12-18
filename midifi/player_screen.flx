@@ -14,11 +14,26 @@ fun x_offset(octave: int, k: Key) =>
 
 
 struct NoteFall {
-    notes: stl_vector[RectangleShape];
+    tracks: stl_vector[stl_vector[RectangleShape]];
 }
 
 ctor NoteFall(midi: MidiFile::MidiFile) = {
-    self := NoteFall (#mkvec[RectangleShape]);
+    self := NoteFall (#mkvec[stl_vector[RectangleShape]]);
+    midi.link_note_pairs;
+
+    for var ti in 0 upto midi.ntracks - 1 do
+        track := #mkvec[RectangleShape];
+
+        for var ei in 0 upto (midi.nevents ti) - 1 do
+            event := midi.[ti.size].[ei.size];
+
+            if event.is_note_on and event.is_linked do
+                /* println$ f"Event "; */
+            done
+        done
+
+        push_back (self.tracks, track);
+    done
 
     return self;
 }
