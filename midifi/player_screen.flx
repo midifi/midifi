@@ -31,11 +31,11 @@ ctor NoteFall(midi: MidiFile::MidiFile) = {
 
     bottom := 0.0f;
 
-    for var ti in 0 upto midi.ntracks - 1 do
+    for var tn in 0 upto midi.ntracks - 1 do
         track := #mkvec[RectangleShape];
 
-        evtloop:for var ei in 0 upto (midi.nevents ti) - 1 do
-            event := midi.[ti.size].[ei.size];
+        evtloop:for var en in 0 upto (midi.nevents tn) - 1 do
+            event := midi.[tn.size].[en.size];
 
             if event.is_note_on and event.is_linked do
                 kn := event.key_number;
@@ -57,7 +57,7 @@ ctor NoteFall(midi: MidiFile::MidiFile) = {
                     r_width = r_width - values.black_key_width / 2.0f;
 
                 r := RectangleShape$ Vector2f (r_width, r_height);
-                r.move (xpos, ypos);
+                r.set_position (xpos, ypos);
                 r.set_fill_color Colors::Blue;
                 r.set_outline_color Colors::Black;
                 r.set_outline_thickness values.line_width;
@@ -72,6 +72,13 @@ ctor NoteFall(midi: MidiFile::MidiFile) = {
     done
 
     // We need to now flip all the tracks upside-down.
+    for (var ti = self.tracks.begin; ti != self.tracks.end; ++ti;) perform
+        for (var ni = (*ti).begin; ni != (*ti).end; ++ni;) do
+            // XXX: Work around optimizing (see comment in draw_onto).
+            r = *ni;
+            r.set_position (r.position.x, bottom - r.position.y);
+            set_vec_iterator (ni, r);
+        done
 
     initial_space := 4.0f * midi.tpq.float * values.tick_height;
     // XXX: Work around optimizing (see comment in draw_onto).
@@ -113,7 +120,7 @@ ctor Keyboard() = {
             xpos := x_offset (octave, key);
             ypos := values.window_height.float - values.white_key_height;
             r := RectangleShape$ Vector2f (key.width, key.height);
-            r.move (xpos, ypos);
+            r.set_position (xpos, ypos);
 
             if key.is_sharp do
                 r.set_fill_color Colors::Black;
