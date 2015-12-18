@@ -1,0 +1,71 @@
+union KeyAcc = // Accidental.
+    | Knatural
+    | Ksharp
+;
+
+union KeyLetter =
+    | Ka
+    | Kb
+    | Kc
+    | Kd
+    | Ke
+    | Kf
+    | Kg
+;
+
+struct Key {
+    l: KeyLetter;
+    a: KeyAcc;
+    d: int; // Distance from C.
+}
+
+instance Str[Key] {
+    fun str(k: Key) => f"Key (%S, %S, %d)" (k.l._strr, k.a._strr, k.d);
+}
+
+keys := (
+    Key (Kc, Knatural, 0), // C
+    Key (Kc, Ksharp,   0), // C#
+    Key (Kd, Knatural, 1), // D
+    Key (Kd, Ksharp,   1), // D#
+    Key (Ke, Knatural, 2), // E
+    Key (Kf, Knatural, 3), // F
+    Key (Kf, Ksharp,   3), // F#
+    Key (Kg, Knatural, 4), // G
+    Key (Kg, Ksharp,   4), // G#
+    Key (Ka, Knatural, 5), // A
+    Key (Ka, Ksharp,   5), // A#
+    Key (Kb, Knatural, 6)  // B
+);
+
+fun is_c(k: Key) => match k.l with
+    | #Kc => true
+    | _ => false
+endmatch;
+
+fun is_sharp(k: Key) => match k.a with
+    | #Knatural => false
+    | #Ksharp   => true
+endmatch;
+
+fun follows_sharp(k: Key) => not k.is_sharp and match k.l with
+    | #Kc => false
+    | #Kf => false
+    | _   => true
+endmatch;
+
+fun precedes_sharp(k: Key) => not k.is_sharp and match k.l with
+    | #Ke => false
+    | #Kb => false
+    | _   => true
+endmatch;
+
+fun width(k: Key) => match k.a with
+    | #Knatural => values.white_key_width
+    | #Ksharp   => values.black_key_width
+endmatch;
+
+fun height(k: Key) => match k.a with
+    | #Knatural => values.white_key_height
+    | #Ksharp   => values.black_key_height
+endmatch;

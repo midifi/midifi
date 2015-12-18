@@ -1,0 +1,64 @@
+include 'stl/stl_vector';
+
+rename fun mkvec[T] = Stl_Vector::create[T];
+
+
+fun x_offset(octave: int, k: Key) =>
+    let base_x = octave.float * values.octave_width +
+                 k.d.float * values.white_key_width in
+    if k.is_sharp
+    then base_x + values.white_key_width - values.black_key_width / 2.0f
+    else base_x endif;
+
+
+struct Keyboard {
+    white_keys: stl_vector[RectangleShape];
+    black_keys: stl_vector[RectangleShape];
+}
+
+ctor Keyboard() = {
+    self := Keyboard (#mkvec[RectangleShape], #mkvec[RectangleShape]);
+
+    root:for var octave in 0 upto values.octaves_to_show perform
+        for key in keys do
+            xpos := x_offset (octave, key);
+            ypos := values.window_height.float - values.white_key_height;
+            r := RectangleShape$ Vector2f (key.width, key.height);
+            r.move (xpos, ypos);
+
+            if key.is_sharp do
+                r.set_fill_color Colors::Black;
+                push_back (self.black_keys, r);
+            else
+                r.set_fill_color Colors::White;
+                r.set_outline_color Colors::Black;
+                r.set_outline_thickness values.line_width;
+                push_back (self.white_keys, r);
+            done
+
+            // Only one C is shown at the last octave.
+            if key.is_c and octave == values.octaves_to_show break root;
+        done
+
+    return self;
+}
+
+proc draw_onto(self: Keyboard, w: RenderWindow) {
+    for (var ki = self.white_keys.begin; ki != self.white_keys.end; ++ki;) perform
+        w.draw$ *ki;
+
+    for (ki = self.black_keys.begin; ki != self.black_keys.end; ++ki;) perform
+        w.draw$ *ki;
+}
+
+
+struct PlayerScreen {
+    kb: Keyboard;
+}
+
+ctor PlayerScreen(midi: MidiFile::MidiFile) =>
+    PlayerScreen (#Keyboard);
+
+proc draw_onto(self: PlayerScreen, w: RenderWindow) {
+    draw_onto (self.kb, w);
+}

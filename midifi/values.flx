@@ -1,0 +1,36 @@
+fun make_values(v: VideoMode) =>
+    let gray_code = 50ut in
+    let white_keys_per_octave = 7 in
+    let black_keys_per_octave = 5 in
+    let keys_per_octave = white_keys_per_octave + black_keys_per_octave in
+    let octaves_to_show = 7 in
+    let white_keys_to_show = white_keys_per_octave * octaves_to_show + 1 in
+    let black_keys_to_show = black_keys_per_octave * octaves_to_show in
+
+    let white_key_width = v.width.float / white_keys_to_show.float in
+    let white_key_height = v.height.float / 5.0f in
+    (
+        video_mode = v,
+
+        gray_color = Color (gray_code, gray_code, gray_code),
+        darken_color = Color (0ut, 0ut, 0ut, 100ut),
+
+        white_keys_per_octave = white_keys_per_octave,
+        black_keys_per_octave = black_keys_per_octave,
+        keys_per_octave = keys_per_octave,
+        octaves_to_show = octaves_to_show,
+        white_keys_to_show = white_keys_to_show,
+        black_keys_to_show = black_keys_to_show,
+
+        line_width = 1.0f,
+        window_width = v.width,
+        window_height = v.height,
+
+        white_key_width = white_key_width,
+        white_key_height = white_key_height,
+        black_key_width = white_key_width * 0.6f,
+        black_key_height = white_key_height * 0.7f,
+        octave_width = white_key_width * white_keys_per_octave.float,
+
+        tick_height = 0.2f
+    );

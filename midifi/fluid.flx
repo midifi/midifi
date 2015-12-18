@@ -1,0 +1,76 @@
+header fluid_header = '''
+#include <fluidsynth.h>
+extern "C" {
+#include <fluid_midi.h>
+}
+#include <atomic>
+
+extern std::atomic<int> midifi_ticks;
+extern "C" int midifi_fluid_callback(void* data, unsigned int ms);
+
+struct MidifiFluidData {
+    MidifiFluidData();
+    ~MidifiFluidData();
+    void play(std::string file);
+
+    fluid_settings_t* settings;
+    fluid_synth_t* synth;
+    fluid_player_t* player;
+    fluid_audio_driver_t* audio_driver;
+};
+
+FLX_FINALISER(MidifiFluidData)
+''' requires package 'fluid';
+
+
+body fluid_body = '''
+std::atomic<int> midifi_ticks{0};
+
+extern "C" int midifi_fluid_callback(void* vdata, unsigned int ms) {
+    MidifiFluidData* data = static_cast<MidifiFluidData*>(data);
+    puts("1234");
+    midifi_ticks++;
+    return fluid_player_callback(data->player, ms);
+}
+
+MidifiFluidData::MidifiFluidData() {
+    settings = new_fluid_settings();
+    fluid_settings_setstr(settings, "audio.driver", "alsa");
+    // XXX: This should probably be an option!
+    fluid_settings_setstr(settings, "player.timing-source", "system");
+    synth = new_fluid_synth(settings);
+    // XXX: Another option!
+    assert(fluid_synth_sfload(synth, "/usr/share/sounds/sf2/FluidR3_GM.sf2", 1)
+           != FLUID_FAILED);
+    player = new_fluid_player(synth);
+    assert(player->use_system_timer);
+    audio_driver = new_fluid_audio_driver(settings, synth);
+}
+
+void MidifiFluidData::play(std::string file) {
+    midifi_ticks = 0;
+    fluid_player_add(player, file.c_str());
+    player->system_timer = new_fluid_timer(static_cast<int>(player->deltatime),
+                                           midifi_fluid_callback,
+                                           static_cast<void*>(this), 1, 0, 1);
+    assert(player->system_timer); // XXX: This should handle errors. Stupid C APIs.
+}
+
+MidifiFluidData::~MidifiFluidData() {
+    delete_fluid_audio_driver(audio_driver);
+    delete_fluid_player(player);
+    delete_fluid_synth(synth);
+    delete_fluid_settings(settings);
+}
+''';
+
+
+type FluidData = 'MidifiFluidData*' requires
+    finaliser 'MidifiFluidData_finaliser', fluid_header, fluid_body;
+ctor FluidData: 1 = 'new MidifiFluidData()';
+
+proc play: FluidData * string = '$1->play($2);';
+proc play(m: FluidData)(f: string) => play (m, f);
+
+
+gen ticks: 1 -> int = 'static_cast<int>(midifi_ticks)';

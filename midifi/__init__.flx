@@ -1,0 +1,11 @@
+include 'sfml/__init__';
+include 'midifile';
+
+open MidiFile;
+open SFML;
+
+include 'midifi/keys';
+include 'midifi/values';
+include 'midifi/fluid';
+include 'midifi/player_screen';
+include 'midifi/window';

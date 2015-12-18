@@ -1,0 +1,33 @@
+/* proc d: int = 'printf("%d\\n", midifi_ticks.load(memory_order_relaxed));'; */
+
+object RootWindow() = {
+    midi := #MidiFile::MidiFile;
+    /* fluid := #FluidData; */
+    path := '/home/ryan/Documents/piano_req.midi.mid';
+    if System::argc == 2 perform
+        path = System::argv 1;
+    assert midi.read path != 0;
+    ps := PlayerScreen midi;
+
+    w := RenderWindow (values.video_mode, 'midifi');
+
+    method proc run() {
+        /* fluid.play path; */
+
+        while w.isopen do
+            /* d #ticks; */
+            /* println$ C_hack::ignore[int] #ticks; */
+            /* code 'printf("%d", static_cast<int>(midifi_ticks));'; */
+            var event: Event;
+            while w.poll_event &event perform
+                if event.type == EventType::Closed do
+                    w.close;
+                    return;
+            done
+
+            w.clear values.gray_color;
+            draw_onto (ps, w);
+            w.display;
+        done
+    }
+}
