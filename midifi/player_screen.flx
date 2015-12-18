@@ -18,6 +18,13 @@ fun x_offset(octave: int, k: Key) =>
     else base_x endif;
 
 
+
+track_colors := varray[Color] (
+    Colors::Green,
+    Colors::Blue
+);
+
+
 struct NoteFall {
     view: &View;
     tracks: stl_vector[stl_vector[RectangleShape]];
@@ -33,6 +40,7 @@ ctor NoteFall(midi: MidiFile::MidiFile) = {
 
     for var tn in 0 upto midi.ntracks - 1 do
         track := #mkvec[RectangleShape];
+        color := track_colors.(tn.size);
 
         evtloop:for var en in 0 upto (midi.nevents tn) - 1 do
             event := midi.[tn.size].[en.size];
@@ -58,7 +66,9 @@ ctor NoteFall(midi: MidiFile::MidiFile) = {
 
                 r := RectangleShape$ Vector2f (r_width, r_height);
                 r.set_position (xpos, ypos);
-                r.set_fill_color Colors::Blue;
+                r.set_fill_color
+                    if key.is_sharp then color - values.darken_color
+                    else color endif;
                 r.set_outline_color Colors::Black;
                 r.set_outline_thickness values.line_width;
 
@@ -71,15 +81,19 @@ ctor NoteFall(midi: MidiFile::MidiFile) = {
         push_back (self.tracks, track);
     done
 
+    nbottom := 0.0f; // New bottom.
+
     // We need to now flip all the tracks upside-down.
     for (var ti = self.tracks.begin; ti != self.tracks.end; ++ti;) perform
         for (var ni = (*ti).begin; ni != (*ti).end; ++ni;) do
             // XXX: Work around optimizing (see comment in draw_onto).
             r = *ni;
             r.set_position (r.position.x, bottom - r.position.y);
+            nbottom = max (nbottom, r.position.y + r.rsize.y);
             set_vec_iterator (ni, r);
         done
 
+    bottom = nbottom;
     initial_space := 4.0f * midi.tpq.float * values.tick_height;
     // XXX: Work around optimizing (see comment in draw_onto).
     view = *self.view;
