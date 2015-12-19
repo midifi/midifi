@@ -5,18 +5,18 @@ header fluid_header = '''
 extern "C" {
 #include <fluid_midi.h>
 }
-/* #include <mutex> */
 
 extern unsigned long long midifi_ticks;
 extern "C" int midifi_fluid_callback(void* data, unsigned int ms);
 
 struct MidifiFluidData {
-    MidifiFluidData(std::string path);
+    MidifiFluidData(std::string path, void* ptf);
     ~MidifiFluidData();
     bool playing();
     void play();
 
     std::string path;
+    void* ptf;
     fluid_settings_t* settings;
     fluid_synth_t* synth;
     fluid_player_t* player;
@@ -30,12 +30,26 @@ FLX_FINALISER(MidifiFluidData)
 body fluid_body = '''
 unsigned long long midifi_ticks = 0;
 
+// Defined in Felix code.
+/* ::flx::rtl::con_t* midifi_flx_event_callback(FLX_FPAR_DECL flx::rtl::cl_t, short); */
+
 extern "C" int midifi_fluid_callback(void* player, unsigned int ms) {
     midifi_ticks = ms / static_cast<fluid_player_t*>(player)->deltatime;
     return fluid_player_callback(player, ms);
 }
 
-MidifiFluidData::MidifiFluidData(std::string path): path(path) {
+extern "C" int midifi_event_callback(void* vdata, fluid_midi_event_t* event) {
+    MidifiFluidData* data = static_cast<MidifiFluidData*>(vdata);
+    int type = fluid_midi_event_get_type(event);
+    if (type == NOTE_ON || type == NOTE_OFF)
+        midifi_flx_event_callback(static_cast<thread_frame_t*>(data->ptf),
+                                  type == NOTE_ON,
+                                  fluid_midi_event_get_key(event));
+    return fluid_synth_handle_midi_event(data->synth, event);
+}
+
+MidifiFluidData::MidifiFluidData(std::string path, void* ptf):
+    path(path), ptf(ptf) {
     settings = new_fluid_settings();
     fluid_settings_setstr(settings, "audio.driver", "alsa");
     // XXX: This should probably be an option!
@@ -45,6 +59,7 @@ MidifiFluidData::MidifiFluidData(std::string path): path(path) {
     assert(fluid_synth_sfload(synth, "/usr/share/sounds/sf2/FluidR3_GM.sf2", 1)
            != FLUID_FAILED);
     player = new_fluid_player(synth);
+    fluid_player_set_playback_callback(player, midifi_event_callback, this);
     assert(player->use_system_timer);
     audio_driver = new_fluid_audio_driver(settings, synth);
 }
@@ -72,7 +87,7 @@ MidifiFluidData::~MidifiFluidData() {
 
 type FluidData = 'MidifiFluidData*' requires
     finaliser 'MidifiFluidData_finaliser', fluid_header, fluid_body;
-ctor FluidData: string = 'new MidifiFluidData($1)';
+ctor FluidData: string = 'new MidifiFluidData($1, FLX_POINTER_TO_THREAD_FRAME)';
 proc play: FluidData = '$1->play();';
 fun playing: FluidData -> bool = '$1->playing()';
 

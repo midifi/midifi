@@ -21,6 +21,7 @@ fun make_values(v: VideoMode) =>
         octaves_to_show = octaves_to_show,
         white_keys_to_show = white_keys_to_show,
         black_keys_to_show = black_keys_to_show,
+        keys_to_show = white_keys_to_show + black_keys_to_show,
 
         line_width = 1.0f,
         window_width = v.width,

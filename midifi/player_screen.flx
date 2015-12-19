@@ -5,9 +5,11 @@ rename fun mkvec[T] = Stl_Vector::create[T];
 proc set_vec_iterator[I,T]: I * T = '*$1 = $2;';
 
 
+fun fixed_key_number(k: int) => k - 24;
+
 fun key_number_info(k: int) =>
-    let k' = k - 24 in
-    k' / 12 - 1, keys.(size$ k' % 12);
+    let k' = k.fixed_key_number in
+    k' / 12 - 2, keys.(size$ k' % 12);
 
 
 fun x_offset(octave: int, k: Key) =>
@@ -25,6 +27,19 @@ track_colors := varray[Color] (
 );
 
 
+// We can't initialize this here because values hasn't been created yet.
+var currently_pressed_keys: varray[bool];
+
+
+proc event_callback(is_on: bool, key: short) {
+    if key < 24s return;
+    key' := key.int.fixed_key_number;
+    unsafe_set (currently_pressed_keys, key'.size, is_on);
+}
+
+export proc event_callback of (bool * short) as 'midifi_flx_event_callback';
+
+
 struct NoteFall {
     view: &View;
     bottom: float;
@@ -38,7 +53,6 @@ ctor NoteFall(midi: MidiFile::MidiFile) = {
     midi.link_note_pairs;
 
     last_note := 0.0f;
-    /* bottom := 0.0f; */
 
     for var tn in 0 upto midi.ntracks - 1 do
         track := #mkvec[RectangleShape];
@@ -122,24 +136,27 @@ proc draw_onto(self: NoteFall, w: RenderWindow) {
     *self.view = v;
 
     for (var ti = self.tracks.begin; ti != self.tracks.end; ++ti;) perform
-        for (var ni = (*ti).begin; ni != (*ti).end; ++ni;) do
+        for (var ni = (*ti).begin; ni != (*ti).end; ++ni;) perform
             w.draw$ *ni;
-        done
 
     w.set_view w.default_view;
 }
 
 
 struct Keyboard {
-    white_keys: stl_vector[RectangleShape];
-    black_keys: stl_vector[RectangleShape];
+    white_keys: stl_vector[int * RectangleShape];
+    black_keys: stl_vector[int * RectangleShape];
 }
 
 ctor Keyboard() = {
-    self := Keyboard (#mkvec[RectangleShape], #mkvec[RectangleShape]);
+    self := Keyboard (#mkvec[int * RectangleShape], #mkvec[int * RectangleShape]);
+
+    currently_pressed_keys = varray[bool] (values.keys_to_show.size, false);
 
     root:for var octave in 0 upto values.octaves_to_show perform
-        for key in keys do
+        for var ki in 0 upto values.keys_per_octave do
+            key := keys.ki;
+            index := (octave * values.keys_per_octave) + ki;
             xpos := x_offset (octave, key);
             ypos := values.window_height.float - values.white_key_height;
             r := RectangleShape$ Vector2f (key.width, key.height);
@@ -147,12 +164,12 @@ ctor Keyboard() = {
 
             if key.is_sharp do
                 r.set_fill_color Colors::Black;
-                push_back (self.black_keys, r);
+                push_back (self.black_keys, (index, r));
             else
                 r.set_fill_color Colors::White;
                 r.set_outline_color Colors::Black;
                 r.set_outline_thickness values.line_width;
-                push_back (self.white_keys, r);
+                push_back (self.white_keys, (index, r));
             done
 
             // Only one C is shown at the last octave.
@@ -162,12 +179,23 @@ ctor Keyboard() = {
     return self;
 }
 
+// The var r is very important!
+proc draw_key(index: int, var r: RectangleShape, w: RenderWindow, black: bool) {
+    if unsafe_get (currently_pressed_keys, index.size) do
+        r.set_fill_color Colors::Red;
+    else
+        r.set_fill_color$ if black then Colors::Black else Colors::White endif;
+    done
+
+    w.draw r;
+}
+
 proc draw_onto(self: Keyboard, w: RenderWindow) {
     for (var ki = self.white_keys.begin; ki != self.white_keys.end; ++ki;) perform
-        w.draw$ *ki;
+        draw_key ((*ki).0, (*ki).1, w, false);
 
     for (ki = self.black_keys.begin; ki != self.black_keys.end; ++ki;) perform
-        w.draw$ *ki;
+        draw_key ((*ki).0, (*ki).1, w, true);
 }
 
 
