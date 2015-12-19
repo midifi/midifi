@@ -44,7 +44,8 @@ extern "C" int midifi_event_callback(void* vdata, fluid_midi_event_t* event) {
     if (type == NOTE_ON || type == NOTE_OFF)
         midifi_flx_event_callback(static_cast<thread_frame_t*>(data->ptf),
                                   type == NOTE_ON,
-                                  fluid_midi_event_get_key(event));
+                                  fluid_midi_event_get_key(event),
+                                  event->dtime);
     return fluid_synth_handle_midi_event(data->synth, event);
 }
 
