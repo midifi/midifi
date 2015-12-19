@@ -28,15 +28,13 @@ track_colors := varray[Color] (
 
 
 // We can't initialize this here because values hasn't been created yet.
-var currently_pressed_keys: varray[bool * int];
-var last_event: int;
+var currently_pressed_keys: varray[bool];
 
 
 proc event_callback(is_on: bool, key: short, delay: int) {
     if key < 24s return;
     key' := key.int.fixed_key_number;
-    unsafe_set (currently_pressed_keys, key'.size, (is_on, #ticks));
-    last_event = #ticks;
+    unsafe_set (currently_pressed_keys, key'.size, is_on);
 }
 
 export proc event_callback of (bool * short * int) as 'midifi_flx_event_callback';
@@ -53,8 +51,6 @@ ctor NoteFall(midi: MidiFile::MidiFile) = {
                              values.window_height.float);
     self := NoteFall (new view, 0.0f, #mkvec[stl_vector[RectangleShape]]);
     midi.link_note_pairs;
-
-    last_note := 0.0f;
 
     for var tn in 0 upto midi.ntracks - 1 do
         track := #mkvec[RectangleShape];
@@ -95,7 +91,6 @@ ctor NoteFall(midi: MidiFile::MidiFile) = {
 
                 push_back (track, r);
 
-                last_note = max (last_note, ypos);
                 self.bottom = max (self.bottom, ypos + r_height);
             done
         done
@@ -108,12 +103,12 @@ ctor NoteFall(midi: MidiFile::MidiFile) = {
         for (var ni = (*ti).begin; ni != (*ti).end; ++ni;) do
             // XXX: Work around optimizing (see comment in draw_onto).
             r = *ni;
-            /* r.set_position (r.position.x, last_note - r.position.y); */
             r.set_position (r.position.x, self.bottom - r.position.y - r.rsize.y);
             set_vec_iterator (ni, r);
         done
 
-    initial_space := 4.0f * midi.tpq.float * values.tick_height;
+    /* initial_space := 4.0f * midi.tpq.float * values.tick_height; */
+    initial_space := 1.0f;
     // XXX: Work around optimizing (see comment in draw_onto).
     view = *self.view;
     view.set_center$ Vector2f (0.0f, self.bottom + initial_space);
@@ -131,7 +126,7 @@ proc draw_onto(self: NoteFall, w: RenderWindow) {
     space_bottom := values.window_height.float / 2.0f - values.white_key_height;
     if v.center.y + space_bottom <= self.bottom perform fluid.play;
     if fluid.playing do
-        v.set_center$ Vector2f (0.0f, self.bottom - space_bottom - #ticks.float *
+        v.set_center$ Vector2f (0.0f, self.bottom - space_bottom - #ticks *
                                       values.tick_height);
     else
         v.set_center$ v.center - Vector2f (0.0f, 0.5f);
@@ -155,8 +150,7 @@ struct Keyboard {
 ctor Keyboard() = {
     self := Keyboard (#mkvec[int * RectangleShape], #mkvec[int * RectangleShape]);
 
-    currently_pressed_keys = varray[bool * int] (values.keys_to_show.size,
-                                                      (false, 0));
+    currently_pressed_keys = varray[bool] (values.keys_to_show.size, false);
 
     root:for var octave in 0 upto values.octaves_to_show perform
         for var ki in 0 upto values.keys_per_octave - 1 do
@@ -186,7 +180,7 @@ ctor Keyboard() = {
 
 // The var r is very important!
 proc draw_key(index: int, var r: RectangleShape, w: RenderWindow, black: bool) {
-    if 0$ unsafe_get (currently_pressed_keys, index.size) do
+    if unsafe_get (currently_pressed_keys, index.size) do
         r.set_fill_color Colors::Red;
     else
         r.set_fill_color$ if black then Colors::Black else Colors::White endif;

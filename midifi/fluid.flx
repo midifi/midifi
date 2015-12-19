@@ -6,7 +6,7 @@ extern "C" {
 #include <fluid_midi.h>
 }
 
-extern unsigned long long midifi_ticks;
+extern float midifi_ticks;
 extern "C" int midifi_fluid_callback(void* data, unsigned int ms);
 
 struct MidifiFluidData {
@@ -28,13 +28,11 @@ FLX_FINALISER(MidifiFluidData)
 
 
 body fluid_body = '''
-unsigned long long midifi_ticks = 0;
-
-// Defined in Felix code.
-/* ::flx::rtl::con_t* midifi_flx_event_callback(FLX_FPAR_DECL flx::rtl::cl_t, short); */
+float midifi_ticks = 0;
 
 extern "C" int midifi_fluid_callback(void* player, unsigned int ms) {
     midifi_ticks = ms / static_cast<fluid_player_t*>(player)->deltatime;
+    /* printf("%f %u %f\\n", midifi_ticks, ms, static_cast<fluid_player_t*>(player)->deltatime); */
     return fluid_player_callback(player, ms);
 }
 
@@ -52,7 +50,7 @@ extern "C" int midifi_event_callback(void* vdata, fluid_midi_event_t* event) {
 MidifiFluidData::MidifiFluidData(std::string path, void* ptf):
     path(path), ptf(ptf) {
     settings = new_fluid_settings();
-    fluid_settings_setstr(settings, "audio.driver", "alsa");
+    fluid_settings_setstr(settings, "audio.driver", "pulseaudio");
     // XXX: This should probably be an option!
     fluid_settings_setstr(settings, "player.timing-source", "system");
     synth = new_fluid_synth(settings);
@@ -92,4 +90,4 @@ ctor FluidData: string = 'new MidifiFluidData($1, FLX_POINTER_TO_THREAD_FRAME)';
 proc play: FluidData = '$1->play();';
 fun playing: FluidData -> bool = '$1->playing()';
 
-gen ticks: 1 -> int = 'static_cast<int>(midifi_ticks)';
+gen ticks: 1 -> float = 'midifi_ticks';
