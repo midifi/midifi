@@ -9,6 +9,7 @@ extern "C" {
 extern unsigned int midifi_ms;
 extern "C" int midifi_fluid_callback(void* data, unsigned int ms);
 
+
 struct MidifiFluidData {
     MidifiFluidData(std::string path, void* ptf);
     ~MidifiFluidData();
@@ -30,6 +31,7 @@ FLX_FINALISER(MidifiFluidData)
 body fluid_body = '''
 unsigned int midifi_ms = 0;
 
+
 extern "C" int midifi_fluid_callback(void* player, unsigned int ms) {
     midifi_ms = ms;
     return fluid_player_callback(player, ms);
@@ -45,6 +47,7 @@ extern "C" int midifi_event_callback(void* vdata, fluid_midi_event_t* event) {
                                   event->dtime);
     return fluid_synth_handle_midi_event(data->synth, event);
 }
+
 
 MidifiFluidData::MidifiFluidData(std::string path, void* ptf):
     path(path), ptf(ptf) {
