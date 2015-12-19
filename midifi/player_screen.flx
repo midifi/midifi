@@ -154,7 +154,7 @@ ctor Keyboard() = {
     currently_pressed_keys = varray[bool] (values.keys_to_show.size, false);
 
     root:for var octave in 0 upto values.octaves_to_show perform
-        for var ki in 0 upto values.keys_per_octave do
+        for var ki in 0 upto values.keys_per_octave - 1 do
             key := keys.ki;
             index := (octave * values.keys_per_octave) + ki;
             xpos := x_offset (octave, key);
