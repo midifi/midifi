@@ -8,7 +8,6 @@ extern "C" {
 /* #include <mutex> */
 
 extern unsigned long long midifi_ticks;
-extern float midifi_tpms;
 extern "C" int midifi_fluid_callback(void* data, unsigned int ms);
 
 struct MidifiFluidData {
@@ -29,16 +28,10 @@ FLX_FINALISER(MidifiFluidData)
 
 
 body fluid_body = '''
-/* std::atomic<int> midifi_ticks{0}; */
-/* std::mutex midifi_tick_lock; */
 unsigned long long midifi_ticks = 0;
-float midifi_tpms = 0;
 
 extern "C" int midifi_fluid_callback(void* player, unsigned int ms) {
-    /* midifi_tick_lock.lock(); */
-    midifi_ticks = ms * midifi_tpms;
-    /* printf("!!%u\\n", ms); */
-    /* midifi_tick_lock.unlock(); */
+    midifi_ticks = ms / static_cast<fluid_player_t*>(player)->deltatime;
     return fluid_player_callback(player, ms);
 }
 
@@ -84,5 +77,3 @@ proc play: FluidData = '$1->play();';
 fun playing: FluidData -> bool = '$1->playing()';
 
 gen ticks: 1 -> int = 'static_cast<int>(midifi_ticks)';
-
-proc set_tpms: float = '::midifi_tpms = $1;';

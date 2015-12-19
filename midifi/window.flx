@@ -9,17 +9,11 @@ object RootWindow() = {
     assert midi.read path != 0;
     fluid = FluidData path;
     ps := PlayerScreen midi;
-    set_tpms$ 60.0f / (120.0f * midi.tpq.float) * 1000.0f;
 
     w := RenderWindow (values.video_mode, 'midifi');
 
     method proc run() {
-        /* fluid.play path; */
-
         while w.isopen do
-            /* d #ticks; */
-            /* println$ C_hack::ignore[int] #ticks; */
-            /* code 'printf("%d", static_cast<int>(midifi_ticks));'; */
             var event: Event;
             while w.poll_event &event perform
                 if event.type == EventType::Closed do
