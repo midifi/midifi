@@ -27,6 +27,9 @@ track_colors := varray[Color] (
     Colors::Blue
 );
 
+fun track_color(track: int) =>
+    track_colors.((track_colors.len - track.size - 1) % track_colors.len);
+
 
 // We can't initialize these here because values hasn't been created yet.
 var currently_pressed_keys: varray[bool];
@@ -59,8 +62,7 @@ ctor NoteFall(midi: MidiFile::MidiFile) = {
 
     for var tn in 0 upto midi.ntracks - 1 do
         track := #mkvec[RectangleShape];
-        color := track_colors.((track_colors.len - tn.size - 1) %
-                               track_colors.len);
+        color := tn.track_color;
 
         evtloop:for var en in 0 upto (midi.nevents tn) - 1 do
             event := midi.[tn.size].[en.size];
