@@ -6,8 +6,8 @@ proc set_vec_iterator[I,T]: I * T = '*$1 = $2;';
 
 
 fun key_number_info(k: int) =>
-    let base = k - 24 in
-    base / 12, keys.(size$ base % 12);
+    let k' = k - 24 in
+    k' / 12 - 1, keys.(size$ k' % 12);
 
 
 fun x_offset(octave: int, k: Key) =>
@@ -36,11 +36,12 @@ ctor NoteFall(midi: MidiFile::MidiFile) = {
     self := NoteFall (new view, #mkvec[stl_vector[RectangleShape]]);
     midi.link_note_pairs;
 
+    last_note := 0.0f;
     bottom := 0.0f;
 
     for var tn in 0 upto midi.ntracks - 1 do
         track := #mkvec[RectangleShape];
-        color := track_colors.(tn.size);
+        color := track_colors.((track_colors.len - tn.size) % track_colors.len);
 
         evtloop:for var en in 0 upto (midi.nevents tn) - 1 do
             event := midi.[tn.size].[en.size];
@@ -50,8 +51,12 @@ ctor NoteFall(midi: MidiFile::MidiFile) = {
                 if kn < 24 continue evtloop; // XXX: This ignores A0-B0.
 
                 var octave, key = kn.key_number_info;
-                xpos := x_offset (octave, key);
+                xpos := x_offset (octave - 1, key);
                 ypos := event.tick.float * values.tick_height;
+                // XXX: I have NO clue why this is necessary...but it is!
+                xpos = xpos - 4.0f * values.white_key_width;
+
+                /* println (tn, octave, key, xpos, event.tick); */
 
                 r_height := event.tick_duration.float * values.tick_height;
                 r_width := key.width;
@@ -74,6 +79,7 @@ ctor NoteFall(midi: MidiFile::MidiFile) = {
 
                 push_back (track, r);
 
+                last_note = max (last_note, ypos);
                 bottom = max (bottom, ypos + r_height);
             done
         done
@@ -81,19 +87,15 @@ ctor NoteFall(midi: MidiFile::MidiFile) = {
         push_back (self.tracks, track);
     done
 
-    nbottom := 0.0f; // New bottom.
-
     // We need to now flip all the tracks upside-down.
     for (var ti = self.tracks.begin; ti != self.tracks.end; ++ti;) perform
         for (var ni = (*ti).begin; ni != (*ti).end; ++ni;) do
             // XXX: Work around optimizing (see comment in draw_onto).
             r = *ni;
-            r.set_position (r.position.x, bottom - r.position.y);
-            nbottom = max (nbottom, r.position.y + r.rsize.y);
+            r.set_position (r.position.x, last_note - r.position.y);
             set_vec_iterator (ni, r);
         done
 
-    bottom = nbottom;
     initial_space := 4.0f * midi.tpq.float * values.tick_height;
     // XXX: Work around optimizing (see comment in draw_onto).
     view = *self.view;
@@ -114,8 +116,9 @@ proc draw_onto(self: NoteFall, w: RenderWindow) {
     *self.view = v;
 
     for (var ti = self.tracks.begin; ti != self.tracks.end; ++ti;) perform
-        for (var ni = (*ti).begin; ni != (*ti).end; ++ni;) perform
+        for (var ni = (*ti).begin; ni != (*ti).end; ++ni;) do
             w.draw$ *ni;
+        done
 
     w.set_view w.default_view;
 }

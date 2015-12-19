@@ -1,4 +1,6 @@
 header fluid_header = '''
+// I could do all this in Felix, but it'd be a LOT of mostly useless bindings.
+
 #include <fluidsynth.h>
 extern "C" {
 #include <fluid_midi.h>
