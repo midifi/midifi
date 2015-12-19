@@ -27,17 +27,18 @@ track_colors := varray[Color] (
 
 struct NoteFall {
     view: &View;
+    bottom: float;
     tracks: stl_vector[stl_vector[RectangleShape]];
 }
 
 ctor NoteFall(midi: MidiFile::MidiFile) = {
     view := View$ FloatRect (0.0f, 0.0f, values.window_width.float,
                              values.window_height.float);
-    self := NoteFall (new view, #mkvec[stl_vector[RectangleShape]]);
+    self := NoteFall (new view, 0.0f, #mkvec[stl_vector[RectangleShape]]);
     midi.link_note_pairs;
 
     last_note := 0.0f;
-    bottom := 0.0f;
+    /* bottom := 0.0f; */
 
     for var tn in 0 upto midi.ntracks - 1 do
         track := #mkvec[RectangleShape];
@@ -55,8 +56,6 @@ ctor NoteFall(midi: MidiFile::MidiFile) = {
                 ypos := event.tick.float * values.tick_height;
                 // XXX: I have NO clue why this is necessary...but it is!
                 xpos = xpos - 4.0f * values.white_key_width;
-
-                /* println (tn, octave, key, xpos, event.tick); */
 
                 r_height := event.tick_duration.float * values.tick_height;
                 r_width := key.width;
@@ -80,7 +79,7 @@ ctor NoteFall(midi: MidiFile::MidiFile) = {
                 push_back (track, r);
 
                 last_note = max (last_note, ypos);
-                bottom = max (bottom, ypos + r_height);
+                self.bottom = max (self.bottom, ypos + r_height);
             done
         done
 
@@ -99,7 +98,7 @@ ctor NoteFall(midi: MidiFile::MidiFile) = {
     initial_space := 4.0f * midi.tpq.float * values.tick_height;
     // XXX: Work around optimizing (see comment in draw_onto).
     view = *self.view;
-    view.set_center$ Vector2f (0.0f, bottom + initial_space);
+    view.set_center$ Vector2f (0.0f, self.bottom + initial_space);
     *self.view = view;
 
     return self;
@@ -111,7 +110,14 @@ proc draw_onto(self: NoteFall, w: RenderWindow) {
        cause the view to NEVER MOVE.
     */
     v := *self.view;
-    v.set_center$ v.center - Vector2f (0.0f, 0.5f);
+    space_bottom := values.window_height.float / 2.0f - values.white_key_height;
+    if v.center.y + space_bottom <= self.bottom perform fluid.play;
+    if fluid.playing do
+        v.set_center$ Vector2f (0.0f, self.bottom - space_bottom - #ticks.float *
+                                      values.tick_height);
+    else
+        v.set_center$ v.center - Vector2f (0.0f, 0.5f);
+    done
     w.set_view v;
     *self.view = v;
 

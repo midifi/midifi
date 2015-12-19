@@ -5,16 +5,19 @@ header fluid_header = '''
 extern "C" {
 #include <fluid_midi.h>
 }
-#include <atomic>
+/* #include <mutex> */
 
-extern std::atomic<int> midifi_ticks;
+extern unsigned long long midifi_ticks;
+extern float midifi_tpms;
 extern "C" int midifi_fluid_callback(void* data, unsigned int ms);
 
 struct MidifiFluidData {
-    MidifiFluidData();
+    MidifiFluidData(std::string path);
     ~MidifiFluidData();
-    void play(std::string file);
+    bool playing();
+    void play();
 
+    std::string path;
     fluid_settings_t* settings;
     fluid_synth_t* synth;
     fluid_player_t* player;
@@ -26,16 +29,20 @@ FLX_FINALISER(MidifiFluidData)
 
 
 body fluid_body = '''
-std::atomic<int> midifi_ticks{0};
+/* std::atomic<int> midifi_ticks{0}; */
+/* std::mutex midifi_tick_lock; */
+unsigned long long midifi_ticks = 0;
+float midifi_tpms = 0;
 
-extern "C" int midifi_fluid_callback(void* vdata, unsigned int ms) {
-    MidifiFluidData* data = static_cast<MidifiFluidData*>(data);
-    puts("1234");
-    midifi_ticks++;
-    return fluid_player_callback(data->player, ms);
+extern "C" int midifi_fluid_callback(void* player, unsigned int ms) {
+    /* midifi_tick_lock.lock(); */
+    midifi_ticks = ms * midifi_tpms;
+    /* printf("!!%u\\n", ms); */
+    /* midifi_tick_lock.unlock(); */
+    return fluid_player_callback(player, ms);
 }
 
-MidifiFluidData::MidifiFluidData() {
+MidifiFluidData::MidifiFluidData(std::string path): path(path) {
     settings = new_fluid_settings();
     fluid_settings_setstr(settings, "audio.driver", "alsa");
     // XXX: This should probably be an option!
@@ -49,12 +56,15 @@ MidifiFluidData::MidifiFluidData() {
     audio_driver = new_fluid_audio_driver(settings, synth);
 }
 
-void MidifiFluidData::play(std::string file) {
+bool MidifiFluidData::playing() { return player->status == FLUID_PLAYER_PLAYING; }
+
+void MidifiFluidData::play() {
+    if (playing()) return;
     midifi_ticks = 0;
-    fluid_player_add(player, file.c_str());
+    fluid_player_add(player, path.c_str());
     player->system_timer = new_fluid_timer(static_cast<int>(player->deltatime),
                                            midifi_fluid_callback,
-                                           static_cast<void*>(this), 1, 0, 1);
+                                           static_cast<void*>(player), 1, 0, 0);
     assert(player->system_timer); // XXX: This should handle errors. Stupid C APIs.
 }
 
@@ -69,10 +79,10 @@ MidifiFluidData::~MidifiFluidData() {
 
 type FluidData = 'MidifiFluidData*' requires
     finaliser 'MidifiFluidData_finaliser', fluid_header, fluid_body;
-ctor FluidData: 1 = 'new MidifiFluidData()';
-
-proc play: FluidData * string = '$1->play($2);';
-proc play(m: FluidData)(f: string) => play (m, f);
-
+ctor FluidData: string = 'new MidifiFluidData($1)';
+proc play: FluidData = '$1->play();';
+fun playing: FluidData -> bool = '$1->playing()';
 
 gen ticks: 1 -> int = 'static_cast<int>(midifi_ticks)';
+
+proc set_tpms: float = '::midifi_tpms = $1;';

@@ -1,13 +1,15 @@
 /* proc d: int = 'printf("%d\\n", midifi_ticks.load(memory_order_relaxed));'; */
+var fluid: FluidData;
 
 object RootWindow() = {
     midi := #MidiFile::MidiFile;
-    /* fluid := #FluidData; */
     path := '/home/ryan/Documents/piano_req.midi.mid';
     if System::argc == 2 perform
         path = System::argv 1;
     assert midi.read path != 0;
+    fluid = FluidData path;
     ps := PlayerScreen midi;
+    set_tpms$ 60.0f / (120.0f * midi.tpq.float) * 1000.0f;
 
     w := RenderWindow (values.video_mode, 'midifi');
 
