@@ -33,5 +33,5 @@ fun make_values(v: VideoMode) =>
         black_key_height = white_key_height * 0.7f,
         octave_width = white_key_width * white_keys_per_octave.float,
 
-        tick_height = 0.2f
+        ms_height = 0.2f
     );

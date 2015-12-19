@@ -6,7 +6,7 @@ extern "C" {
 #include <fluid_midi.h>
 }
 
-extern float midifi_ticks;
+extern unsigned int midifi_ms;
 extern "C" int midifi_fluid_callback(void* data, unsigned int ms);
 
 struct MidifiFluidData {
@@ -28,11 +28,10 @@ FLX_FINALISER(MidifiFluidData)
 
 
 body fluid_body = '''
-float midifi_ticks = 0;
+unsigned int midifi_ms = 0;
 
 extern "C" int midifi_fluid_callback(void* player, unsigned int ms) {
-    midifi_ticks = ms / static_cast<fluid_player_t*>(player)->deltatime;
-    /* printf("%f %u %f\\n", midifi_ticks, ms, static_cast<fluid_player_t*>(player)->deltatime); */
+    midifi_ms = ms;
     return fluid_player_callback(player, ms);
 }
 
@@ -67,7 +66,7 @@ bool MidifiFluidData::playing() { return player->status == FLUID_PLAYER_PLAYING;
 
 void MidifiFluidData::play() {
     if (playing()) return;
-    midifi_ticks = 0;
+    midifi_ms = 0;
     fluid_player_add(player, path.c_str());
     player->system_timer = new_fluid_timer(static_cast<int>(player->deltatime),
                                            midifi_fluid_callback,
@@ -90,4 +89,4 @@ ctor FluidData: string = 'new MidifiFluidData($1, FLX_POINTER_TO_THREAD_FRAME)';
 proc play: FluidData = '$1->play();';
 fun playing: FluidData -> bool = '$1->playing()';
 
-gen ticks: 1 -> float = 'midifi_ticks';
+gen ms: 1 -> uint = 'midifi_ms';
