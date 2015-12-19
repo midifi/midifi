@@ -5,6 +5,7 @@ rename fun mkvec[T] = Stl_Vector::create[T];
 proc set_vec_iterator[I,T]: I * T = '*$1 = $2;';
 
 
+// DO NOT PASS A0-B0!!!
 fun fixed_key_number(k: int) => k - 24;
 
 fun key_number_info(k: int) =>
@@ -26,9 +27,6 @@ track_colors := varray[Color] (
     Colors::Green,
     Colors::Blue
 );
-
-fun track_color(track: int) =>
-    track_colors.((track_colors.len - track.size - 1) % track_colors.len);
 
 
 // We can't initialize these here because values hasn't been created yet.
@@ -62,12 +60,10 @@ ctor NoteFall(midi: MidiFile::MidiFile) = {
 
     for var tn in 0 upto midi.ntracks - 1 do
         track := #mkvec[RectangleShape];
-        color := tn.track_color;
+        color := track_colors.((midi.ntracks + tn).size % track_colors.len);
 
         evtloop:for var en in 0 upto (midi.nevents tn) - 1 do
             event := midi.[tn.size].[en.size];
-
-            /* println event.seconds; */
 
             if event.is_note_on and event.is_linked do
                 kn := event.key_number;
