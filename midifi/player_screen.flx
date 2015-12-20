@@ -33,13 +33,13 @@ track_colors := varray[Color] (
 var currently_pressed_keys: varray[bool];
 
 
-proc event_callback(is_on: bool, key: short, delay: int) {
+proc event_callback(is_on: bool, key: short) {
     if key < 24s return;
     key' := key.int.fixed_key_number;
     unsafe_set (currently_pressed_keys, key'.size, is_on);
 }
 
-export proc event_callback of (bool * short * int) as 'midifi_flx_event_callback';
+export proc event_callback of (bool * short) as 'midifi_flx_event_callback';
 
 
 fun seconds_to_ms(sec: double) => sec * 1000.0;
