@@ -48,7 +48,7 @@ fun seconds_to_ms(sec: double) => sec * 1000.0;
 
 
 struct NoteFall {
-    view: &View;
+    view: View;
     bottom: float;
     tracks: stl_vector[stl_vector[RectangleShape]];
 }
@@ -56,7 +56,7 @@ struct NoteFall {
 ctor NoteFall(midi: MidiFile::MidiFile) = {
     view := View$ FloatRect (0.0f, 0.0f, values.window_width.float,
                              values.window_height.float);
-    self := NoteFall (new view, 0.0f, #mkvec[stl_vector[RectangleShape]]);
+    self := NoteFall (view, 0.0f, #mkvec[stl_vector[RectangleShape]]);
     midi.link_note_pairs;
     midi.do_time_analysis;
 
@@ -116,32 +116,32 @@ ctor NoteFall(midi: MidiFile::MidiFile) = {
 
     /* initial_space := 4.0f * midi.tpq.float * values.tick_height; */
     initial_space := 1.0f;
+
     // XXX: Work around optimizing (see comment in draw_onto).
-    view = *self.view;
     view.set_center$ Vector2f (view.center.x, self.bottom + initial_space);
-    *self.view = view;
+    self.view = view;
 
     return self;
 }
 
-proc draw_onto(self: NoteFall, w: RenderWindow) {
+proc draw_onto(self: &NoteFall, w: RenderWindow) {
     /*
        XXX: This is to get around Felix optimizing-out a bunch of stuff that
        cause the view to NEVER MOVE.
     */
     v := *self.view;
     space_bottom := values.window_height.float / 2.0f - values.white_key_height;
-    if v.center.y + space_bottom <= self.bottom perform fluid.play;
+    if v.center.y + space_bottom <= self*.bottom perform fluid.play;
     if fluid.playing do
-        v.set_center$ Vector2f (v.center.x, self.bottom - space_bottom - #ms.float
-                                            * values.ms_height);
+        v.set_center$ Vector2f (v.center.x, self*.bottom - space_bottom -
+                                            #ms.float * values.ms_height);
     else
         v.move (0.0f, -0.5f);
     done
     w.set_view v;
     *self.view = v;
 
-    for (var ti = self.tracks.begin; ti != self.tracks.end; ++ti;) perform
+    for (var ti = self*.tracks.begin; ti != self*.tracks.end; ++ti;) perform
         for (var ni = (*ti).begin; ni != (*ti).end; ++ni;) perform
             w.draw$ *ni;
 
@@ -196,22 +196,22 @@ proc draw_key(index: int, var r: RectangleShape, w: RenderWindow, black: bool) {
     w.draw r;
 }
 
-proc draw_onto(self: Keyboard, w: RenderWindow) {
-    for (var ki = self.white_keys.begin; ki != self.white_keys.end; ++ki;) perform
-        draw_key ((*ki).0, (*ki).1, w, false);
+proc draw_onto(self: &Keyboard, w: RenderWindow) {
+    for (var ki = self*.white_keys.begin; ki != self*.white_keys.end; ++ki;)
+        perform draw_key ((*ki).0, (*ki).1, w, false);
 
-    for (ki = self.black_keys.begin; ki != self.black_keys.end; ++ki;) perform
+    for (ki = self*.black_keys.begin; ki != self*.black_keys.end; ++ki;) perform
         draw_key ((*ki).0, (*ki).1, w, true);
 }
 
 
 struct PlayerScreen {
-    n: NoteFall;
-    kb: Keyboard;
+    n: &NoteFall;
+    kb: &Keyboard;
 }
 
 ctor PlayerScreen(midi: MidiFile::MidiFile) =>
-    PlayerScreen (NoteFall midi, #Keyboard);
+    PlayerScreen (new (NoteFall midi), new #Keyboard);
 
 proc draw_onto(self: PlayerScreen, w: RenderWindow) {
     draw_onto (self.n, w);
