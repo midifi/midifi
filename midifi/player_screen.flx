@@ -72,15 +72,10 @@ ctor NoteFall(midi: MidiFile::MidiFile) = {
                 if kn < 24 continue evtloop; // XXX: This ignores A0-B0.
 
                 var octave, key = kn.key_number_info;
-                // XXX: Why is the -3 needed?
-                xpos := x_offset (octave - 3, key);
+                xpos := x_offset (octave, key);
                 ypos := event.seconds.seconds_to_ms.float *
                         values.ms_height;
-                // XXX: I have NO clue why this is necessary...but it is!
-                xpos = xpos - 4.0f * values.white_key_width;
 
-                /* println$ ms; */
-                /* println (key, event.duration_in_seconds); */
                 r_height := event.duration_in_seconds.seconds_to_ms.float *
                             values.ms_height;
                 r_width := key.width;
@@ -123,7 +118,7 @@ ctor NoteFall(midi: MidiFile::MidiFile) = {
     initial_space := 1.0f;
     // XXX: Work around optimizing (see comment in draw_onto).
     view = *self.view;
-    view.set_center$ Vector2f (0.0f, self.bottom + initial_space);
+    view.set_center$ Vector2f (view.center.x, self.bottom + initial_space);
     *self.view = view;
 
     return self;
@@ -138,10 +133,10 @@ proc draw_onto(self: NoteFall, w: RenderWindow) {
     space_bottom := values.window_height.float / 2.0f - values.white_key_height;
     if v.center.y + space_bottom <= self.bottom perform fluid.play;
     if fluid.playing do
-        v.set_center$ Vector2f (0.0f, self.bottom - space_bottom - #ms.float *
-                                      values.ms_height);
+        v.set_center$ Vector2f (v.center.x, self.bottom - space_bottom - #ms.float
+                                            * values.ms_height);
     else
-        v.set_center$ v.center - Vector2f (0.0f, 0.5f);
+        v.move (0.0f, -0.5f);
     done
     w.set_view v;
     *self.view = v;
