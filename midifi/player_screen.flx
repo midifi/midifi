@@ -47,16 +47,49 @@ export proc event_callback of (bool * short) as 'midifi_flx_event_callback';
 fun seconds_to_ms(sec: double) => sec * 1000.0;
 
 
+struct Progress {
+    last_ms: float;
+    finished: RectangleShape;
+    left: RectangleShape;
+}
+
+ctor Progress(last_ms: float) = {
+    finished := RectangleShape$ Vector2f (0.0f, values.progress_height);
+    left := RectangleShape$ Vector2f (values.window_width.float,
+                                      values.progress_height);
+    finished.set_fill_color values.dark_green;
+
+    finished.set_outline_color Colors::Black;
+    finished.set_outline_thickness values.line_width;
+
+    left.set_outline_color Colors::Black;
+    left.set_outline_thickness values.line_width;
+
+    return Progress (last_ms, finished, left);
+}
+
+proc draw_onto(self: &Progress, w: RenderWindow) {
+    finished := self*.finished;
+    new_width := (#ms.float / self*.last_ms) * values.window_width.float;
+    if new_width < values.window_width.float perform
+        finished.set_size$ Vector2f (new_width, values.progress_height);
+    w.draw self*.left;
+    w.draw finished;
+    self*.finished = finished;
+}
+
+
 struct NoteFall {
     view: View;
     bottom: float;
+    last_ms: float;
     tracks: stl_vector[stl_vector[RectangleShape]];
 }
 
 ctor NoteFall(midi: MidiFile::MidiFile) = {
     view := View$ FloatRect (0.0f, 0.0f, values.window_width.float,
                              values.window_height.float);
-    self := NoteFall (view, 0.0f, #mkvec[stl_vector[RectangleShape]]);
+    self := NoteFall (view, 0.0f, 0.0f, #mkvec[stl_vector[RectangleShape]]);
     midi.link_note_pairs;
     midi.do_time_analysis;
 
@@ -72,12 +105,13 @@ ctor NoteFall(midi: MidiFile::MidiFile) = {
                 if kn < 24 continue evtloop; // XXX: This ignores A0-B0.
 
                 var octave, key = kn.key_number_info;
-                xpos := x_offset (octave, key);
-                ypos := event.seconds.seconds_to_ms.float *
-                        values.ms_height;
+                start_ms := event.seconds.seconds_to_ms;
+                dur_ms := event.duration_in_seconds.seconds_to_ms;
 
-                r_height := event.duration_in_seconds.seconds_to_ms.float *
-                            values.ms_height;
+                xpos := x_offset (octave, key);
+                ypos := start_ms.float * values.ms_height;
+
+                r_height := dur_ms.float * values.ms_height;
                 r_width := key.width;
 
                 if key.follows_sharp do
@@ -99,6 +133,7 @@ ctor NoteFall(midi: MidiFile::MidiFile) = {
                 push_back (track, r);
 
                 self.bottom = max (self.bottom, ypos + r_height);
+                self.last_ms = max (self.last_ms, start_ms.float + dur_ms.float);
             done
         done
 
@@ -206,14 +241,17 @@ proc draw_onto(self: &Keyboard, w: RenderWindow) {
 
 
 struct PlayerScreen {
+    p: &Progress;
     n: &NoteFall;
     kb: &Keyboard;
 }
 
 ctor PlayerScreen(midi: MidiFile::MidiFile) =>
-    PlayerScreen (new (NoteFall midi), new #Keyboard);
+    let nf = NoteFall midi in
+    PlayerScreen (new (Progress nf.last_ms), new nf, new #Keyboard);
 
 proc draw_onto(self: PlayerScreen, w: RenderWindow) {
     draw_onto (self.n, w);
     draw_onto (self.kb, w);
+    draw_onto (self.p, w);
 }

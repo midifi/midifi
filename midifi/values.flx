@@ -9,11 +9,13 @@ fun make_values(v: VideoMode) =>
 
     let white_key_width = v.width.float / white_keys_to_show.float in
     let white_key_height = v.height.float / 5.0f in
+    let progress_height = v.width.float / 30.0f in
     (
         video_mode = v,
 
         gray_color = Color (gray_code, gray_code, gray_code),
         darken_color = Color (0ut, 0ut, 0ut, 100ut),
+        dark_green = Color (34ut, 139ut, 34ut),
 
         white_keys_per_octave = white_keys_per_octave,
         black_keys_per_octave = black_keys_per_octave,
@@ -32,6 +34,7 @@ fun make_values(v: VideoMode) =>
         black_key_width = white_key_width * 0.6f,
         black_key_height = white_key_height * 0.7f,
         octave_width = white_key_width * white_keys_per_octave.float,
+        progress_height = progress_height,
 
         ms_height = 0.2f
     );

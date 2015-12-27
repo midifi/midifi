@@ -1,13 +1,23 @@
 /* proc d: int = 'printf("%d\\n", midifi_ticks.load(memory_order_relaxed));'; */
 var fluid: FluidData;
 
+gen error_msg: unit -> string = '::std::string(strerror(errno))';
+fun /(l: string, r: string) => Filename::join (l, r);
+
 object RootWindow() = {
     midi := #MidiFile::MidiFile;
     path := '/home/ryan/Documents/piano_req.midi.mid';
+    this := Filename::dirname$ System::argv 0;
     if System::argc == 2 perform
         path = System::argv 1;
-    assert midi.read path != 0;
-    fluid = FluidData path;
+
+    if midi.read path == 0 do
+        eprintln$ f"Error opening %S: %S" (path, #error_msg);
+        System::exit 1;
+    done
+
+    // XXX: Custom soundfonts should probably be an option.
+    fluid = FluidData (path, this/'data'/'FluidR3_GM.sf2');
     ps := PlayerScreen midi;
 
     w := RenderWindow (values.video_mode, 'midifi');

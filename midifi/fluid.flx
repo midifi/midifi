@@ -11,7 +11,7 @@ extern "C" int midifi_fluid_callback(void* data, unsigned int ms);
 
 
 struct MidifiFluidData {
-    MidifiFluidData(std::string path, void* ptf);
+    MidifiFluidData(std::string path, std::string sf, void* ptf);
     ~MidifiFluidData();
     bool playing();
     void play();
@@ -49,16 +49,17 @@ extern "C" int midifi_event_callback(void* vdata, fluid_midi_event_t* event) {
 }
 
 
-MidifiFluidData::MidifiFluidData(std::string path, void* ptf):
+MidifiFluidData::MidifiFluidData(std::string path, std::string sf, void* ptf):
     path(path), ptf(ptf) {
     settings = new_fluid_settings();
     fluid_settings_setstr(settings, "audio.driver", "pulseaudio");
     // XXX: This should probably be an option!
     fluid_settings_setstr(settings, "player.timing-source", "system");
     synth = new_fluid_synth(settings);
-    // XXX: Another option!
-    assert(fluid_synth_sfload(synth, "/usr/share/sounds/sf2/FluidR3_GM.sf2", 1)
-           != FLUID_FAILED);
+    if (fluid_synth_sfload(synth, sf.c_str(), 1) == FLUID_FAILED) {
+        std::cerr << "Cannot open soundfont data!\\n";
+        exit(1);
+    }
     player = new_fluid_player(synth);
     fluid_player_set_playback_callback(player, midifi_event_callback, this);
     assert(player->use_system_timer);
@@ -88,7 +89,8 @@ MidifiFluidData::~MidifiFluidData() {
 
 type FluidData = 'MidifiFluidData*' requires
     finaliser 'MidifiFluidData_finaliser', fluid_header, fluid_body;
-ctor FluidData: string = 'new MidifiFluidData($1, FLX_POINTER_TO_THREAD_FRAME)';
+ctor FluidData: string * string =
+    'new MidifiFluidData($1, $2, FLX_POINTER_TO_THREAD_FRAME)';
 proc play: FluidData = '$1->play();';
 fun playing: FluidData -> bool = '$1->playing()';
 
