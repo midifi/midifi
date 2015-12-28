@@ -17,7 +17,7 @@ object RootWindow() = {
 
     // XXX: Custom soundfonts should probably be an option.
     fluid = FluidData (path, this/'data'/'FluidR3_GM.sf2', midi.tpq);
-    ps := PlayerScreen (midi, fluid.deltatime.float);
+    ps := PlayerScreen midi;
 
     w := RenderWindow (values.video_mode, 'midifi');
 

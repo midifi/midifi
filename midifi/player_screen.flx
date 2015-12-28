@@ -86,7 +86,7 @@ struct NoteFall {
     tracks: stl_vector[stl_vector[RectangleShape]];
 }
 
-ctor NoteFall(midi: MidiFile::MidiFile, deltatime: float) = {
+ctor NoteFall(midi: MidiFile::MidiFile) = {
     view := View$ FloatRect (0.0f, 0.0f, values.window_width.float,
                              values.window_height.float);
     self := NoteFall (view, 0.0f, 0.0f, #mkvec[stl_vector[RectangleShape]]);
@@ -147,7 +147,7 @@ ctor NoteFall(midi: MidiFile::MidiFile, deltatime: float) = {
         push_back (self.tracks, track);
     done
 
-    deltatime = if C_hack::isNULL (C_hack::reinterpret[&byte] first_event)
+    deltatime := if C_hack::isNULL (C_hack::reinterpret[&byte] first_event)
     then 4.0f
     else
         first_event.duration_in_seconds.seconds_to_ms.float /
@@ -251,8 +251,8 @@ struct PlayerScreen {
     kb: &Keyboard;
 }
 
-ctor PlayerScreen(midi: MidiFile::MidiFile, deltatime: float) =>
-    let nf = NoteFall (midi, deltatime) in
+ctor PlayerScreen(midi: MidiFile::MidiFile) =>
+    let nf = NoteFall midi in
     PlayerScreen (new (Progress nf.last_ms), new nf, new #Keyboard);
 
 proc draw_onto(self: PlayerScreen, w: RenderWindow) {
