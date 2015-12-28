@@ -97,6 +97,8 @@ def gen_fluid_fpc(ctx, cxx):
         all_flags += ' '.join(cflags) + ' '
         all_libs += libs + ' '
 
+    all_libs += '-Lfluidsynth/fluidsynth/src -lfluidsynth'
+
     fluidsynth_root = Path('fluidsynth') / 'fluidsynth'
     fluidsynth_includes = ['include', 'src/midi', 'src/utils']
     for include in fluidsynth_includes:
