@@ -1,4 +1,3 @@
-/* proc d: int = 'printf("%d\\n", midifi_ticks.load(memory_order_relaxed));'; */
 var fluid: FluidData;
 
 gen error_msg: unit -> string = '::std::string(strerror(errno))';
