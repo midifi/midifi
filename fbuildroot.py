@@ -173,12 +173,12 @@ class Felix(fbuild.db.PersistentObject):
             process_library(lib)
 
         cmd = [self.flx, '-c', '--static']
+        cmd.extend(('-o', dst))
         cmd.extend('--pkgconfig-path+=' + path for path in pkgconfig_paths)
         cmd.extend('-I' + include for include in includes)
         cmd.extend('-L' + path for path in libpaths)
         cmd.extend('-l' + lib for lib in new_libs)
         cmd.extend('--cflags=' + flag for flag in cflags)
-        cmd.extend(('-o', dst))
         cmd.append(src)
 
         self.ctx.execute(cmd, 'flx', '%s -> %s' % (src, dst), color='link')
