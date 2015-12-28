@@ -35,20 +35,15 @@ body fluid_body = '''
 unsigned int midifi_ms = 0;
 
 
-extern "C" int midifi_fluid_callback(void* player, unsigned int ms) {
-    fluid_player_t* fplayer = static_cast<fluid_player_t*>(player);
+extern "C" int midifi_fluid_callback(void* vplayer, unsigned int ms) {
+    fluid_player_t* player = static_cast<fluid_player_t*>(vplayer);
     midifi_ms = ms;
-    if (fplayer->currentfile == NULL) {
-        /*
-           XXX: This line is ugly as heck! It's so Fluid doesn't load the next
-           track yet.
-        */
-        /* fplayer->currentfile = static_cast<fluid_list_t*>(player); */
-        fplayer->currentfile = fplayer->playlist;
-        fplayer->begin_msec = fplayer->start_msec = fplayer->start_ticks =
-            fplayer->cur_ticks = 0;
+    if (player->currentfile == NULL) {
+        player->currentfile = player->playlist;
+        player->begin_msec = player->start_msec = player->start_ticks =
+            player->cur_ticks = 0;
     }
-    return fluid_player_callback(player, ms);
+    return fluid_player_callback(vplayer, ms);
 }
 
 extern "C" int midifi_event_callback(void* vdata, fluid_midi_event_t* event) {
@@ -113,7 +108,7 @@ void MidifiFluidData::setup_ticks() {
         event = new_fluid_midi_event();
         event->type = NOTE_OFF;
         event->channel = 9;
-        event->dtime = tpq/4;
+        event->dtime = tpq/4-1;
         event->param1 = note;
         event->param2 = 0;
         fluid_track_add_event(track, event);

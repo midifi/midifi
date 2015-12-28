@@ -149,8 +149,8 @@ ctor NoteFall(midi: MidiFile::MidiFile, deltatime: float) = {
             set_vec_iterator (ni, r);
         done
 
-    initial_space := deltatime / 4.0f * midi.tpq.float * values.ms_height;
-    self.bottom = self.bottom + initial_space;
+    initial_space := deltatime * midi.tpq.float * values.ms_height;
+    self.bottom = self.bottom + 1.25f*initial_space;
 
     // XXX: Work around optimizing (see comment in draw_onto).
     view.set_center$ Vector2f (view.center.x, self.bottom);
