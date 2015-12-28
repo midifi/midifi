@@ -108,7 +108,8 @@ void MidifiFluidData::setup_ticks() {
         event = new_fluid_midi_event();
         event->type = NOTE_OFF;
         event->channel = 9;
-        event->dtime = tpq/4-1;
+        /* event->dtime = tpq/4-1; */
+        event->dtime = tpq-1;
         event->param1 = note;
         event->param2 = 0;
         fluid_track_add_event(track, event);
