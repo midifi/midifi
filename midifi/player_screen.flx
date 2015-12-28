@@ -93,6 +93,9 @@ ctor NoteFall(midi: MidiFile::MidiFile, deltatime: float) = {
     midi.link_note_pairs;
     midi.do_time_analysis;
 
+    var first_event: MidiFile::MidiEvent;
+    first_event = C_hack::reinterpret[MidiEvent] C_hack::null[byte]; // XXX
+
     for var tn in 0 upto midi.ntracks - 1 do
         track := #mkvec[RectangleShape];
         color := track_colors.((midi.ntracks + tn).size % track_colors.len);
@@ -101,6 +104,10 @@ ctor NoteFall(midi: MidiFile::MidiFile, deltatime: float) = {
             event := midi.[tn.size].[en.size];
 
             if event.is_note_on and event.is_linked do
+                if C_hack::isNULL (C_hack::reinterpret[&byte] first_event) or
+                   event.seconds < first_event.seconds perform
+                   first_event = event;
+
                 kn := event.key_number;
                 if kn < 24 continue evtloop; // XXX: This ignores A0-B0.
 
@@ -139,6 +146,12 @@ ctor NoteFall(midi: MidiFile::MidiFile, deltatime: float) = {
 
         push_back (self.tracks, track);
     done
+
+    deltatime = if C_hack::isNULL (C_hack::reinterpret[&byte] first_event)
+    then 4.0f
+    else
+        first_event.duration_in_seconds.seconds_to_ms.float /
+        first_event.tick_duration.float;
 
     // We need to now flip all the tracks upside-down.
     for (var ti = self.tracks.begin; ti != self.tracks.end; ++ti;) perform
