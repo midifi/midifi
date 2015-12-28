@@ -86,7 +86,7 @@ struct NoteFall {
     tracks: stl_vector[stl_vector[RectangleShape]];
 }
 
-ctor NoteFall(midi: MidiFile::MidiFile) = {
+ctor NoteFall(midi: MidiFile::MidiFile, deltatime: float) = {
     view := View$ FloatRect (0.0f, 0.0f, values.window_width.float,
                              values.window_height.float);
     self := NoteFall (view, 0.0f, 0.0f, #mkvec[stl_vector[RectangleShape]]);
@@ -149,11 +149,11 @@ ctor NoteFall(midi: MidiFile::MidiFile) = {
             set_vec_iterator (ni, r);
         done
 
-    /* initial_space := 4.0f * midi.tpq.float * values.tick_height; */
-    initial_space := 1.0f;
+    initial_space := deltatime / 4.0f * midi.tpq.float * values.ms_height;
+    self.bottom = self.bottom + initial_space;
 
     // XXX: Work around optimizing (see comment in draw_onto).
-    view.set_center$ Vector2f (view.center.x, self.bottom + initial_space);
+    view.set_center$ Vector2f (view.center.x, self.bottom);
     self.view = view;
 
     return self;
@@ -165,14 +165,9 @@ proc draw_onto(self: &NoteFall, w: RenderWindow) {
        cause the view to NEVER MOVE.
     */
     v := *self.view;
-    space_bottom := values.window_height.float / 2.0f - values.white_key_height;
-    if v.center.y + space_bottom <= self*.bottom perform fluid.play;
-    if fluid.playing do
-        v.set_center$ Vector2f (v.center.x, self*.bottom - space_bottom -
-                                            #ms.float * values.ms_height);
-    else
-        v.move (0.0f, -0.5f);
-    done
+    halfway_point := v.vsize.y / 2.0f;
+    v.set_center$ Vector2f (v.center.x, self*.bottom - halfway_point -
+                                        #ms.float * values.ms_height);
     w.set_view v;
     *self.view = v;
 
@@ -246,8 +241,8 @@ struct PlayerScreen {
     kb: &Keyboard;
 }
 
-ctor PlayerScreen(midi: MidiFile::MidiFile) =>
-    let nf = NoteFall midi in
+ctor PlayerScreen(midi: MidiFile::MidiFile, deltatime: float) =>
+    let nf = NoteFall (midi, deltatime) in
     PlayerScreen (new (Progress nf.last_ms), new nf, new #Keyboard);
 
 proc draw_onto(self: PlayerScreen, w: RenderWindow) {

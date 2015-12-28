@@ -4,21 +4,24 @@ header fluid_header = '''
 #include <fluidsynth.h>
 extern "C" {
 #include <fluid_midi.h>
+fluid_midi_event_t* new_fluid_midi_event();
 }
 
 extern unsigned int midifi_ms;
 extern "C" int midifi_fluid_callback(void* data, unsigned int ms);
 
-
 struct MidifiFluidData {
-    MidifiFluidData(std::string path, std::string sf, void* ptf);
+    MidifiFluidData(std::string path, std::string sf, int tpq, void* ptf);
     ~MidifiFluidData();
     bool playing();
     void play();
+    void setup_ticks();
 
     std::string path;
+    int tpq;
     void* ptf;
     fluid_settings_t* settings;
+    fluid_sequencer_t* sequencer;
     fluid_synth_t* synth;
     fluid_player_t* player;
     fluid_audio_driver_t* audio_driver;
@@ -33,7 +36,18 @@ unsigned int midifi_ms = 0;
 
 
 extern "C" int midifi_fluid_callback(void* player, unsigned int ms) {
+    fluid_player_t* fplayer = static_cast<fluid_player_t*>(player);
     midifi_ms = ms;
+    if (fplayer->currentfile == NULL) {
+        /*
+           XXX: This line is ugly as heck! It's so Fluid doesn't load the next
+           track yet.
+        */
+        /* fplayer->currentfile = static_cast<fluid_list_t*>(player); */
+        fplayer->currentfile = fplayer->playlist;
+        fplayer->begin_msec = fplayer->start_msec = fplayer->start_ticks =
+            fplayer->cur_ticks = 0;
+    }
     return fluid_player_callback(player, ms);
 }
 
@@ -49,8 +63,8 @@ extern "C" int midifi_event_callback(void* vdata, fluid_midi_event_t* event) {
 }
 
 
-MidifiFluidData::MidifiFluidData(std::string path, std::string sf, void* ptf):
-    path(path), ptf(ptf) {
+MidifiFluidData::MidifiFluidData(std::string path, std::string sf, int tpq,
+    void* ptf): path(path), tpq(tpq), ptf(ptf) {
     settings = new_fluid_settings();
     fluid_settings_setstr(settings, "audio.driver", "pulseaudio");
     // XXX: This should probably be an option!
@@ -60,9 +74,12 @@ MidifiFluidData::MidifiFluidData(std::string path, std::string sf, void* ptf):
         std::cerr << "Cannot open soundfont data!\\n";
         exit(1);
     }
+
     player = new_fluid_player(synth);
     fluid_player_set_playback_callback(player, midifi_event_callback, this);
     assert(player->use_system_timer);
+    setup_ticks();
+    fluid_player_add(player, path.c_str());
     audio_driver = new_fluid_audio_driver(settings, synth);
 }
 
@@ -71,17 +88,45 @@ bool MidifiFluidData::playing() { return player->status == FLUID_PLAYER_PLAYING;
 void MidifiFluidData::play() {
     if (playing()) return;
     midifi_ms = 0;
-    fluid_player_add(player, path.c_str());
+    player->status = FLUID_PLAYER_PLAYING;
     player->system_timer = new_fluid_timer(static_cast<int>(player->deltatime),
                                            midifi_fluid_callback,
                                            static_cast<void*>(player), 1, 0, 0);
     assert(player->system_timer); // XXX: This should handle errors. Stupid C APIs.
 }
 
+void MidifiFluidData::setup_ticks() {
+    fluid_track_t* track = new_fluid_track(fluid_player_count_tracks(player));
+    int weak_note=33, strong_note=34;
+
+    for (int i=0; i<4; ++i) {
+        unsigned int note = i \? weak_note : strong_note;
+
+        fluid_midi_event_t* event = new_fluid_midi_event();
+        event->type = NOTE_ON;
+        event->channel = 9;
+        event->dtime = 0;
+        event->param1 = note;
+        event->param2 = 100;
+        fluid_track_add_event(track, event);
+
+        event = new_fluid_midi_event();
+        event->type = NOTE_OFF;
+        event->channel = 9;
+        event->dtime = tpq/4;
+        event->param1 = note;
+        event->param2 = 0;
+        fluid_track_add_event(track, event);
+    }
+
+    assert(fluid_player_add_track(player, track) == FLUID_OK);
+}
+
 MidifiFluidData::~MidifiFluidData() {
     delete_fluid_audio_driver(audio_driver);
     delete_fluid_player(player);
     delete_fluid_synth(synth);
+    delete_fluid_sequencer(sequencer);
     delete_fluid_settings(settings);
 }
 ''';
@@ -89,9 +134,10 @@ MidifiFluidData::~MidifiFluidData() {
 
 type FluidData = 'MidifiFluidData*' requires
     finaliser 'MidifiFluidData_finaliser', fluid_header, fluid_body;
-ctor FluidData: string * string =
-    'new MidifiFluidData($1, $2, FLX_POINTER_TO_THREAD_FRAME)';
+ctor FluidData: string * string * int =
+    'new MidifiFluidData($1, $2, $3, FLX_POINTER_TO_THREAD_FRAME)';
 proc play: FluidData = '$1->play();';
 fun playing: FluidData -> bool = '$1->playing()';
+fun deltatime: FluidData -> double = '$1->player->deltatime';
 
 gen ms: 1 -> uint = 'midifi_ms';

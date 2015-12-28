@@ -16,18 +16,25 @@ object RootWindow() = {
     done
 
     // XXX: Custom soundfonts should probably be an option.
-    fluid = FluidData (path, this/'data'/'FluidR3_GM.sf2');
-    ps := PlayerScreen midi;
+    fluid = FluidData (path, this/'data'/'FluidR3_GM.sf2', midi.tpq);
+    ps := PlayerScreen (midi, fluid.deltatime.float);
 
     w := RenderWindow (values.video_mode, 'midifi');
 
     method proc run() {
+        fluid.play;
+
         while w.isopen do
             var event: Event;
             while w.poll_event &event perform
                 if event.type == EventType::Closed do
                     w.close;
                     return;
+            done
+
+            if not fluid.playing do
+                w.close;
+                return;
             done
 
             w.clear values.gray_color;
