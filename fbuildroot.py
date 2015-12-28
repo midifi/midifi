@@ -72,7 +72,7 @@ def gen_sfml_fpc(ctx, cxx):
 @fbuild.db.caches
 def gen_midifile_fpc(ctx, cxx):
     def write(directory):
-        with open('midifile.flx/midifile.fpc') as base_f:
+        with open('midifile-flx/midifile.fpc') as base_f:
                 base = base_f.read()
 
         # XXX: This is an ugly hack!
@@ -95,7 +95,7 @@ def gen_fluid_fpc(ctx, cxx):
     for pkg in 'glib-2.0', 'gthread-2.0':
         cflags, libs = get_info_for(ctx, cxx, pkg, {})
         all_flags += ' '.join(cflags) + ' '
-        all_libs += libs
+        all_libs += libs + ' '
 
     fluidsynth_root = Path('fluidsynth') / 'fluidsynth'
     fluidsynth_includes = ['include', 'src/midi', 'src/utils']
@@ -256,11 +256,11 @@ def build_midifile(ctx, rec):
 
 def build_midifi(ctx, rec, midifile):
     all_sources = []
-    for pat in 'midifi/*.flx', 'sfml/sfml/*.flx', 'midifile.flx/midifile.flx':
+    for pat in 'midifi/*.flx', 'sfml/sfml/*.flx', 'midifile-flx/midifile.flx':
         all_sources.extend(Path.glob(pat))
 
     rec.felix.compile('midifi', 'midifi.flx', all_sources, rec.static,
-                      includes=['sfml', 'midifile', 'midifile.flx'],
+                      includes=['sfml', 'midifile', 'midifile-flx'],
                       pkgconfig_paths=['build/config'], libs=[midifile])
 
 def build(ctx):
