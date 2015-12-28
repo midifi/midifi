@@ -149,8 +149,8 @@ ctor NoteFall(midi: MidiFile::MidiFile, deltatime: float) = {
             set_vec_iterator (ni, r);
         done
 
-    initial_space := deltatime * midi.tpq.float * values.ms_height;
-    self.bottom = self.bottom + 4.0f * initial_space;
+    initial_space := 4.0f * deltatime * midi.tpq.float * values.ms_height;
+    self.bottom = self.bottom + initial_space;
     self.last_ms = self.last_ms + 4.0f * deltatime * midi.tpq.float;
 
     return self;
