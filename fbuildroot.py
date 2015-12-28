@@ -134,12 +134,23 @@ class Felix(fbuild.db.PersistentObject):
 @fbuild.db.caches
 def configure(ctx):
     felix = Felix(ctx)
-    kw = dict(platform_extra=felix.platform_extra)
+    kw = dict(platform_extra=felix.platform_extra, platform_options=[
+        ({'posix'}, {'flags+': ['-std=c++11']}),
+    ])
     static = guess_static(ctx, **kw)
     shared = guess_shared(ctx, **kw)
     gen_fpc(ctx, static)
     check_fluid(shared.lib_linker)
     return Record(static=static, shared=shared, felix=felix)
 
+#--------------------------------------------------------------------------------
+# BUILDING.
+#--------------------------------------------------------------------------------
+
+def build_midifile(ctx, rec):
+    return rec.static.build_lib('midifile',
+        Path.glob('midifile/src-library/*.cpp'), includes=['midifile/include'])
+
 def build(ctx):
     rec = configure(ctx)
+    midifile = build_midifile(ctx, rec)
