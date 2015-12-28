@@ -23,18 +23,26 @@ def check_fluid(linker):
     if not fluidsynth.exists():
         raise fbuild.ConfigFailed(message)
 
-def get_libs_for(ctx, pkg, defaults):
+def get_info_for(ctx, cxx, pkg, defaults):
+    lib_arg = '' if isinstance(cxx, MsvcBuilder) else '-l'
+
     try:
-        libs = PkgConfig(ctx, pkg).libs()
+        pkgconfig = PkgConfig(ctx, pkg)
+        cflags = pkgconfig.cflags()
+        libs = pkgconfig.libs()
     except:
         ctx.logger.check('trying to get libs for %s' % pkg)
-        libs = ' '.join(map(lib_arg.__add__, defaults[pkg]))
-        ctx.logger.failed('failed (using defaults %s)' % libs)
+        includes = []
+        libs = ' '.join(map(lib_arg.__add__, defaults.get(pkg, [])))
+        failmsg = 'failed'
+        if libs:
+            failmsg += ' (using defaults %s)' % libs
+        ctx.logger.failed(failmsg)
     else:
         ctx.logger.check('trying to get libs for -%s' % pkg)
         ctx.logger.passed('ok %s' % libs)
 
-    return libs
+    return cflags, libs
 
 def write_fpc(ctx, fpc, write):
     directory = ctx.buildroot / 'config'
@@ -47,8 +55,6 @@ def gen_sfml_fpc(ctx, cxx):
     sys.path.insert(0, str(Path(__file__).dirname() / 'sfml'))
     import gen_fpc
 
-    lib_arg = '' if isinstance(cxx, MsvcBuilder) else '-l'
-
     default_libs = {
         'system': ['system'],
         'window': ['window', 'system'],
@@ -58,18 +64,64 @@ def gen_sfml_fpc(ctx, cxx):
     all_libs = {}
 
     for pkg in gen_fpc.packages:
-        all_libs[pkg] = get_libs_for(ctx, 'sfml-' + pkg, default_libs)
+        all_libs[pkg] = get_info_for(ctx, cxx, 'sfml-' + pkg, default_libs)[1]
 
     for pkg, libs in all_libs.items():
         write_fpc(ctx, 'sfml-%s.fpc' % pkg, lambda d: gen_fpc.write(pkg, libs, d))
-        # directory = ctx.buildroot / 'config'
-        # directory.makedirs()
-        # ctx.logger.check(' * generating fpc', directory / ('sfml-%s.fpc' % pkg),
-                         # color='yellow')
-        # gen_fpc.write(pkg, libs, str(directory))
+
+@fbuild.db.caches
+def gen_midifile_fpc(ctx, cxx):
+    def write(directory):
+        with open('midifile.flx/midifile.fpc') as base_f:
+                base = base_f.read()
+
+        # XXX: This is an ugly hack!
+        fpc = base.replace('lib: ', 'lib: -L%s ' % ctx.buildroot)
+        fpc = fpc.replace('provides_dlib',
+                          'cflags: -Imidifile/include\nprovides_dlib')
+
+        with open(directory / 'midifile.fpc', 'w') as f:
+            f.write(fpc)
+
+    write_fpc(ctx, 'midifile.fpc', write)
+
+@fbuild.db.caches
+def gen_fluid_fpc(ctx, cxx):
+    all_flags = ''
+    all_libs = ''
+
+    lib_arg = '' if isinstance(cxx, MsvcBuilder) else '-l'
+
+    for pkg in 'glib-2.0', 'gthread-2.0':
+        cflags, libs = get_info_for(ctx, cxx, pkg, {})
+        all_flags += ' '.join(cflags) + ' '
+        all_libs += libs
+
+    fluidsynth_root = Path('fluidsynth') / 'fluidsynth'
+    fluidsynth_includes = ['include', 'src/midi', 'src/utils']
+    for include in fluidsynth_includes:
+        all_flags += ' -I' + str(fluidsynth_root / include)
+
+    def write(directory):
+        template = textwrap.dedent('''
+        Name: fluid
+        Description: Midifi fluidsynth stuff!
+        cflags: {flags}
+        provides_dlib: {libs}
+        provides_slib: {libs}
+        '''.lstrip('\n').rstrip(' '))
+
+        fpc = template.format(flags=all_flags, libs=all_libs)
+
+        with open(directory / 'fluid.fpc', 'w') as f:
+            f.write(fpc)
+
+    write_fpc(ctx, 'fluid.fpc', write)
 
 def gen_fpc(*args):
     gen_sfml_fpc(*args)
+    gen_midifile_fpc(*args)
+    gen_fluid_fpc(*args)
 
 class Felix(fbuild.db.PersistentObject):
     def __init__(self, ctx, flx=None, flx_pkgconfig=None):
