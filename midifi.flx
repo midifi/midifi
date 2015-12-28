@@ -1,5 +1,3 @@
-/* #!/usr/bin/env flxrun */
-//flxrun:--pkgconfig-path+=sfml/sfml-fpc --pkgconfig-path+=. --pkgconfig-path+=midifile -Isfml -Imidifile.flx -I/media/ryan/stuff/midifile/include -L/media/ryan/stuff/midifile/lib --cflags=-g --static
 include 'midifi/__init__';
 
 values := make_values$ if Env::getenv 'AUTOMODE' == 'true'
