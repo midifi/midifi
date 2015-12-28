@@ -23,6 +23,25 @@ def check_fluid(linker):
     if not fluidsynth.exists():
         raise fbuild.ConfigFailed(message)
 
+def get_libs_for(ctx, pkg, defaults):
+    try:
+        libs = PkgConfig(ctx, pkg).libs()
+    except:
+        ctx.logger.check('trying to get libs for %s' % pkg)
+        libs = ' '.join(map(lib_arg.__add__, defaults[pkg]))
+        ctx.logger.failed('failed (using defaults %s)' % libs)
+    else:
+        ctx.logger.check('trying to get libs for -%s' % pkg)
+        ctx.logger.passed('ok %s' % libs)
+
+    return libs
+
+def write_fpc(ctx, fpc, write):
+    directory = ctx.buildroot / 'config'
+    directory.makedirs()
+    ctx.logger.check(' * generating fpc', directory / fpc, color='yellow')
+    write(directory)
+
 @fbuild.db.caches
 def gen_sfml_fpc(ctx, cxx):
     sys.path.insert(0, str(Path(__file__).dirname() / 'sfml'))
@@ -39,24 +58,15 @@ def gen_sfml_fpc(ctx, cxx):
     all_libs = {}
 
     for pkg in gen_fpc.packages:
-        try:
-            libs = PkgConfig(ctx, 'sfml-' + pkg).libs()
-        except:
-            ctx.logger.check('trying to get libs for sfml-%s' % pkg)
-            libs = ' '.join(map(lib_arg.__add__, default_libs[pkg]))
-            ctx.logger.failed('failed (using defaults %s)' % libs)
-        else:
-            ctx.logger.check('trying to get libs for sfml-%s' % pkg)
-            ctx.logger.passed('ok %s' % libs)
-
-        all_libs[pkg] = libs
+        all_libs[pkg] = get_libs_for(ctx, 'sfml-' + pkg, default_libs)
 
     for pkg, libs in all_libs.items():
-        directory = ctx.buildroot / 'config'
-        directory.makedirs()
-        ctx.logger.check(' * generating fpc', directory / ('sfml-%s.fpc' % pkg),
-                         color='yellow')
-        gen_fpc.write(pkg, libs, str(directory))
+        write_fpc(ctx, 'sfml-%s.fpc' % pkg, lambda d: gen_fpc.write(pkg, libs, d))
+        # directory = ctx.buildroot / 'config'
+        # directory.makedirs()
+        # ctx.logger.check(' * generating fpc', directory / ('sfml-%s.fpc' % pkg),
+                         # color='yellow')
+        # gen_fpc.write(pkg, libs, str(directory))
 
 def gen_fpc(*args):
     gen_sfml_fpc(*args)
