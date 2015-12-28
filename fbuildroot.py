@@ -1,6 +1,5 @@
 from fbuild.builders.cxx import guess_static, guess_shared
 from fbuild.builders.c.msvc import Builder as MsvcBuilder
-from fbuild.builders.c.gcc import Builder as GccBuilder
 from fbuild.builders.pkg_config import PkgConfig
 from fbuild.builders.c import Library
 from fbuild.builders import find_program
