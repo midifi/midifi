@@ -8,7 +8,7 @@ from fbuild.record import Record
 from fbuild.path import Path
 import fbuild
 
-import sys, re, textwrap
+import sys, re, textwrap, os, shutil, tarfile, urllib.request
 
 def check_fluid(linker):
     fluidsynth = Path(linker.prefix + 'fluidsynth' + linker.suffix)
@@ -252,6 +252,45 @@ def configure(ctx):
 # BUILDING.
 #--------------------------------------------------------------------------------
 
+@fbuild.db.caches
+def download_soundfont(ctx) -> fbuild.db.DST:
+    ctx.logger.check('downloading FluidR3 GM (this will take a few moments)')
+    tar = ctx.buildroot / 'fluid-soundfont.tar.gz'
+    url = 'http://www.musescore.org/download/fluid-soundfont.tar.gz'
+    try:
+        with urllib.request.urlopen(url) as response, open(tar, 'wb') as f:
+            shutil.copyfileobj(response, f)
+    except:
+        ctx.logger.failed()
+        raise
+    else:
+        ctx.logger.passed('ok %s' % tar)
+
+    return tar
+
+@fbuild.db.caches
+def extract_soundfont(ctx, tar: fbuild.db.SRC) -> fbuild.db.DST:
+    dst = ctx.buildroot / 'data' / 'FluidR3_GM.sf2'
+    dst.dirname().makedirs()
+    member = 'FluidR3 GM2-2.SF2'
+    ctx.logger.check('extracting FluidR3 GM (this will take a few moments)')
+    try:
+        with tarfile.open(str(tar)) as tf:
+            tf.extract(member, ctx.buildroot)
+
+        os.rename(ctx.buildroot / member, dst)
+    except:
+        ctx.logger.failed()
+        raise
+    else:
+        ctx.logger.passed('ok %s' % dst)
+
+    return dst
+
+def get_soundfont(ctx):
+    tar = download_soundfont(ctx)
+    extract_soundfont(ctx, tar)
+
 def build_midifile(ctx, rec):
     return rec.static.build_lib('midifile',
         Path.glob('midifile/src-library/*.cpp'), includes=['midifile/include'])
@@ -267,5 +306,6 @@ def build_midifi(ctx, rec, midifile):
 
 def build(ctx):
     rec = configure(ctx)
+    get_soundfont(ctx)
     midifile = build_midifile(ctx, rec)
     build_midifi(ctx, rec, midifile)
