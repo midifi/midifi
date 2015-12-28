@@ -1,0 +1,4 @@
+build/
+__pycache__/
+fluidsynth/fluidsynth/doc/Doxyfile
+flxg_stats.txt
