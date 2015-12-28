@@ -1,0 +1,4 @@
+[submodule "fluidsynth"]
+	path = fluidsynth
+	url = http://git.code.sf.net/p/fluidsynth/code-git
+	ignore = dirty
