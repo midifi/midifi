@@ -150,12 +150,8 @@ ctor NoteFall(midi: MidiFile::MidiFile, deltatime: float) = {
         done
 
     initial_space := deltatime * midi.tpq.float * values.ms_height;
-    self.bottom = self.bottom + 5.2f*initial_space;
+    self.bottom = self.bottom + 4.0f * initial_space;
     self.last_ms = self.last_ms + 4.0f * deltatime * midi.tpq.float;
-
-    // XXX: Work around optimizing (see comment in draw_onto).
-    view.set_center$ Vector2f (view.center.x, self.bottom);
-    self.view = view;
 
     return self;
 }
@@ -166,8 +162,8 @@ proc draw_onto(self: &NoteFall, w: RenderWindow) {
        cause the view to NEVER MOVE.
     */
     v := *self.view;
-    halfway_point := v.vsize.y / 2.0f;
-    v.set_center$ Vector2f (v.center.x, self*.bottom - halfway_point -
+    space_bottom := values.window_height.float / 2.0f - values.white_key_height;
+    v.set_center$ Vector2f (v.center.x, self*.bottom - space_bottom -
                                         #ms.float * values.ms_height);
     w.set_view v;
     *self.view = v;
