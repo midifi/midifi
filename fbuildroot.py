@@ -196,8 +196,6 @@ class Felix(fbuild.db.PersistentObject):
 
     @fbuild.db.cacheproperty
     def platform_extra(self):
-        # XXX
-        return {'clang'}
         get_toolchain = '''
         include 'std/felix/toolchain_clang_config';
         include 'std/felix/toolchain_interface';
