@@ -93,12 +93,14 @@ proc draw_onto(self: &Progress, w: RenderWindow) {
     if new_width < values.window_width.float perform
         finished.set_size$ Vector2f (new_width, values.progress_height);
 
-    self*.finished_time.set_string '0:00';
+    finished_time := self*.finished_time;
+    finished_time.set_string '0:00';
 
     w.draw self*.left;
     w.draw finished;
-    w.draw self*.finished_time;
+    w.draw finished_time;
     self*.finished = finished;
+    self*.finished_time = finished_time;
 }
 
 
