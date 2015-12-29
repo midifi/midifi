@@ -35,6 +35,7 @@ fun make_values(v: VideoMode) =>
         black_key_height = white_key_height * 0.7f,
         octave_width = white_key_width * white_keys_per_octave.float,
         progress_height = progress_height,
+        progress_time_height = progress_height * 0.6f,
 
         ms_height = 0.2f
     );
