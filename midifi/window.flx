@@ -15,9 +15,9 @@ object RootWindow() = {
         System::exit 1;
     done
 
-    // XXX: Custom soundfonts should probably be an option.
-    fluid = FluidData (path, this/'data'/'FluidR3_GM.sf2', midi.tpq);
     ps := PlayerScreen midi;
+    // XXX: Custom soundfonts should probably be an option.
+    fluid = FluidData (path, this/'data'/'FluidR3_GM.sf2', midi.tpq, numerator);
 
     w := RenderWindow (values.video_mode, 'midifi');
 

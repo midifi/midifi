@@ -11,14 +11,15 @@ extern unsigned int midifi_ms;
 extern "C" int midifi_fluid_callback(void* data, unsigned int ms);
 
 struct MidifiFluidData {
-    MidifiFluidData(std::string path, std::string sf, int tpq, void* ptf);
+    MidifiFluidData(std::string path, std::string sf, int tpq, int num,
+                    void* ptf);
     ~MidifiFluidData();
     bool playing();
     void play();
     void setup_ticks();
 
     std::string path;
-    int tpq;
+    int tpq, num;
     void* ptf;
     fluid_settings_t* settings;
     fluid_sequencer_t* sequencer;
@@ -59,7 +60,7 @@ extern "C" int midifi_event_callback(void* vdata, fluid_midi_event_t* event) {
 
 
 MidifiFluidData::MidifiFluidData(std::string path, std::string sf, int tpq,
-    void* ptf): path(path), tpq(tpq), ptf(ptf) {
+    int num, void* ptf): path(path), tpq(tpq), num(num), ptf(ptf) {
     settings = new_fluid_settings();
     char* adriver;
     fluid_settings_getstr(settings, "audio.driver", &adriver);
@@ -98,7 +99,7 @@ void MidifiFluidData::setup_ticks() {
     fluid_track_t* track = new_fluid_track(fluid_player_count_tracks(player));
     int weak_note=33, strong_note=34;
 
-    for (int i=0; i<4; ++i) {
+    for (int i=0; i<num; ++i) {
         unsigned int note = i \? weak_note : strong_note;
 
         fluid_midi_event_t* event = new_fluid_midi_event();
@@ -133,8 +134,8 @@ MidifiFluidData::~MidifiFluidData() {
 
 type FluidData = 'MidifiFluidData*' requires
     finaliser 'MidifiFluidData_finaliser', fluid_header, fluid_body;
-ctor FluidData: string * string * int =
-    'new MidifiFluidData($1, $2, $3, FLX_POINTER_TO_THREAD_FRAME)';
+ctor FluidData: string * string * int * int =
+    'new MidifiFluidData($1, $2, $3, $4, FLX_POINTER_TO_THREAD_FRAME)';
 proc play: FluidData = '$1->play();';
 fun playing: FluidData -> bool = '$1->playing()';
 fun deltatime: FluidData -> double = '$1->player->deltatime';
