@@ -65,8 +65,8 @@ MidifiFluidData::MidifiFluidData(std::string path, std::string sf, int tpq,
     char* adriver;
     fluid_settings_getstr(settings, "audio.driver", &adriver);
     if (strcmp(adriver, "jack") == 0)
-        // JACK can be really finicky, so we always try ALSA.
-        fluid_settings_setstr(settings, "audio.driver", "alsa");
+        // JACK can be really finicky, so we always try Pulseaudio (ALSA sucks).
+        fluid_settings_setstr(settings, "audio.driver", "pulseaudio");
     // XXX: This should probably be an option!
     fluid_settings_setstr(settings, "player.timing-source", "system");
     synth = new_fluid_synth(settings);
@@ -92,7 +92,7 @@ void MidifiFluidData::play() {
     player->system_timer = new_fluid_timer(static_cast<int>(player->deltatime),
                                            midifi_fluid_callback,
                                            static_cast<void*>(player), 1, 0, 0);
-    assert(player->system_timer); // XXX: This should handle errors. Stupid C APIs.
+    assert(player->system_timer); // XXX: This should handle errors. Stupid C API.
 }
 
 void MidifiFluidData::setup_ticks() {
