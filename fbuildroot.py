@@ -1,13 +1,15 @@
 from fbuild.builders.cxx import guess_static, guess_shared
 from fbuild.builders.c.msvc import Builder as MsvcBuilder
 from fbuild.builders.pkg_config import PkgConfig
+from fbuild.builders.file import copy
 from fbuild.builders.c import Library
 from fbuild.builders import find_program
 from fbuild.record import Record
 from fbuild.path import Path
 import fbuild
 
-import sys, re, textwrap, os, shutil, tarfile, urllib.request
+import sys, re, textwrap, os, shutil, tarfile, urllib.request,\
+       xml.etree.ElementTree as etree
 
 def check_fluid(linker):
     fluidsynth = Path(linker.prefix + 'fluidsynth' + linker.suffix)
@@ -288,6 +290,53 @@ def get_soundfont(ctx):
     tar = download_soundfont(ctx)
     extract_soundfont(ctx, tar)
 
+@fbuild.db.caches
+def find_font(ctx) -> fbuild.db.DST:
+    ctx.logger.check('locating arial font')
+    font = None
+
+    if sys.platform == 'win32':
+        font = Path(os.environ['SYSTEMROOT']) / 'Fonts' / 'Arial.ttf'
+        if not font.exists():
+            font = None
+    elif sys.platform.startswith('linux'):
+        # Check /etc/fonts/fonts.conf.
+        font_dirs = []
+        fonts = Path('/etc/fonts/fonts.conf')
+        if not fonts.exists():
+            ctx.logger.failed()
+            raise fbuild.ConfigFailed('cannot locate fonts.conf')
+
+        tree = etree.parse(str(fonts))
+        for element in tree.findall('dir'):
+            path = Path(element.text)
+            if element.attrib.get('prefix') == 'xdg' and \
+                'XDG_DATA_HOME' in os.environ:
+                path = path.addroot(os.environ['XDG_DATA_HOME'])
+
+            try:
+                font = Path(next(path.find('Arial.ttf', include_dirs=False)))
+            except StopIteration:
+                pass
+            else:
+                break
+
+    if font is None:
+        ctx.logger.failed()
+        raise fbuild.ConfigFailed('cannot locate arial font')
+    else:
+        ctx.logger.passed('ok %s' % font)
+        return font
+
+@fbuild.db.caches
+def save_font(ctx, font: fbuild.db.SRC) -> fbuild.db.DST:
+    dst = ctx.buildroot / 'data' / 'Arial.ttf'
+    return copy(ctx, font, dst)
+
+def get_font(ctx):
+    font = find_font(ctx)
+    save_font(ctx, font)
+
 def build_midifile(ctx, rec):
     return rec.static.build_lib('midifile',
         Path.glob('midifile/src-library/*.cpp'), includes=['midifile/include'])
@@ -304,5 +353,6 @@ def build_midifi(ctx, rec, midifile):
 def build(ctx):
     rec = configure(ctx)
     get_soundfont(ctx)
+    get_font(ctx)
     midifile = build_midifile(ctx, rec)
     build_midifi(ctx, rec, midifile)
