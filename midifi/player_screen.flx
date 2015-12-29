@@ -66,6 +66,7 @@ ctor Progress(last_ms: float, begin_msec: float) = {
     left := RectangleShape$ Vector2f (values.window_width.float,
                                       values.progress_height);
     finished.set_fill_color values.dark_green;
+    left.set_fill_color$ Colors::White - values.darken_color;
 
     finished.set_outline_color Colors::Black;
     finished.set_outline_thickness values.line_width;
