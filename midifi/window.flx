@@ -28,9 +28,12 @@ object RootWindow() = {
     done
 
     w := RenderWindow (values.video_mode, 'midifi');
+    show_fps := Env::getenv 'SHOWFPS' == 'true';
 
     method proc run() {
         fluid.play;
+
+        cstmt 'sf::Clock fpsc;';
 
         while w.isopen do
             var event: Event;
@@ -43,6 +46,13 @@ object RootWindow() = {
             if not fluid.playing do
                 w.close;
                 return;
+            done
+
+            if show_fps do
+                fps := cexpr[float]
+                    '1000000.0f / fpsc.restart().asMicroseconds()'
+                endcexpr;
+                print$ f"FPS: %S\r" fps.str;
             done
 
             w.clear values.gray_color;
