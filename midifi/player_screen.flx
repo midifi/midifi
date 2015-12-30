@@ -67,52 +67,53 @@ struct Progress {
 }
 
 ctor Progress(last_ms: float, begin_msec: float) = {
-    finished := RectangleShape$ Vector2f (0.0f, values.progress_height);
-    left := RectangleShape$ Vector2f (values.window_width.float,
-                                      values.progress_height);
-    finished.set_fill_color$ values.dark_green - values.darken_color;
-    left.set_fill_color$ Colors::White - values.darken_color;
+    var finished = RectangleShape$ Vector2f (0.0f, values.progress_height);
+    var left = RectangleShape$ Vector2f (values.window_width.float,
+                                         values.progress_height);
+    finished&.set_fill_color$ values.dark_green - values.darken_color;
+    left&.set_fill_color$ Colors::White - values.darken_color;
 
-    finished.set_outline_color Colors::Black;
-    finished.set_outline_thickness values.line_width;
+    finished&.set_outline_color Colors::Black;
+    finished&.set_outline_thickness values.line_width;
 
-    left.set_outline_color Colors::Black;
-    left.set_outline_thickness values.line_width;
+    left&.set_outline_color Colors::Black;
+    left&.set_outline_thickness values.line_width;
 
+    var finished_time = #Text;
+    var total_time = #Text;
     forall time in finished_time, total_time do
-        time := #Text;
-        time.set_font font;
-        time.set_color Colors::Black;
-        time.set_character_size values.progress_time_height.uint;
-        time.set_position values.time_draw_pos;
+        time&.set_font font;
+        time&.set_color Colors::Black;
+        time&.set_character_size values.progress_time_height.uint;
+        time&.set_position values.time_draw_pos;
     done
 
-    total_time.set_string last_ms.uint.ms_to_str;
-    total_time.set_position (values.window_width.float - values.time_draw_pos.x -
-                             total_time.local_bounds.width,
-                             values.time_draw_pos.y);
+    total_time&.set_string last_ms.uint.ms_to_str;
+    total_time&.set_position (values.window_width.float - values.time_draw_pos.x -
+                              total_time.local_bounds.width,
+                              values.time_draw_pos.y);
 
     return Progress (last_ms, begin_msec, finished, left, finished_time,
                      total_time);
 }
 
 proc draw_onto(self: &Progress, w: RenderWindow) {
-    finished := self*.finished;
+    /* finished := self*.finished; */
     new_width := (#ms.float / self*.last_ms) * values.window_width.float;
     if new_width < values.window_width.float perform
-        finished.set_size$ Vector2f (new_width, values.progress_height);
+        self.finished.set_size$ Vector2f (new_width, values.progress_height);
 
     finished_ms := #ms;
 
-    finished_time := self*.finished_time;
-    finished_time.set_string finished_ms.ms_to_str;
+    /* finished_time := self*.finished_time; */
+    self.finished_time.set_string finished_ms.ms_to_str;
 
     w.draw self*.left;
-    w.draw finished;
-    w.draw finished_time;
+    w.draw self*.finished;
+    w.draw self*.finished_time;
     w.draw self*.total_time;
-    self*.finished = finished;
-    self*.finished_time = finished_time;
+    /* self*.finished = finished; */
+    /* self*.finished_time = finished_time; */
 }
 
 
@@ -169,13 +170,13 @@ ctor NoteFall(midi: MidiFile::MidiFile) = {
                 if key.precedes_sharp perform
                     r_width = r_width - values.black_key_width / 2.0f;
 
-                r := RectangleShape$ Vector2f (r_width, r_height);
-                r.set_position (xpos, ypos);
-                r.set_fill_color
+                var r = RectangleShape$ Vector2f (r_width, r_height);
+                r&.set_position (xpos, ypos);
+                r&.set_fill_color
                     if key.is_sharp then color - values.darken_color
                     else color endif;
-                r.set_outline_color Colors::Black;
-                r.set_outline_thickness values.line_width;
+                r&.set_outline_color Colors::Black;
+                r&.set_outline_thickness values.line_width;
 
                 push_back (track, r);
 
@@ -201,7 +202,8 @@ ctor NoteFall(midi: MidiFile::MidiFile) = {
         for (var ni = (*ti).begin; ni != (*ti).end; ++ni;) do
             // XXX: Work around optimizing (see comment in draw_onto).
             r = *ni;
-            r.set_position (r.position.x, self.bottom - r.position.y - r.rsize.y);
+            r&.set_position (r.position.x, self.bottom - r.position.y -
+                                           r.rsize.y);
             set_vec_iterator (ni, r);
         done
 
@@ -219,12 +221,12 @@ proc draw_onto(self: &NoteFall, w: RenderWindow) {
        XXX: This is to get around Felix optimizing-out a bunch of stuff that
        cause the view to NEVER MOVE.
     */
-    v := *self.view;
+    v := self.view;
     space_bottom := values.window_height.float / 2.0f - values.white_key_height;
-    v.set_center$ Vector2f (v.center.x, self*.bottom - space_bottom -
-                                        #ms.float * values.ms_height);
-    w.set_view v;
-    *self.view = v;
+    v.set_center$ Vector2f (v*.center.x, self*.bottom - space_bottom -
+                            #ms.float * values.ms_height);
+    w.set_view$ *v;
+    /* *self.view = v; */
 
     for (var ti = self*.tracks.begin; ti != self*.tracks.end; ++ti;) perform
         for (var ni = (*ti).begin; ni != (*ti).end; ++ni;) perform
@@ -250,16 +252,16 @@ ctor Keyboard() = {
             index := (octave * values.keys_per_octave) + ki;
             xpos := x_offset (octave, key);
             ypos := values.window_height.float - values.white_key_height;
-            r := RectangleShape$ Vector2f (key.width, key.height);
-            r.set_position (xpos, ypos);
+            var r = RectangleShape$ Vector2f (key.width, key.height);
+            r&.set_position (xpos, ypos);
 
             if key.is_sharp do
-                r.set_fill_color Colors::Black;
+                r&.set_fill_color Colors::Black;
                 push_back (self.black_keys, (index, r));
             else
-                r.set_fill_color Colors::White;
-                r.set_outline_color Colors::Black;
-                r.set_outline_thickness values.line_width;
+                r&.set_fill_color Colors::White;
+                r&.set_outline_color Colors::Black;
+                r&.set_outline_thickness values.line_width;
                 push_back (self.white_keys, (index, r));
             done
 
@@ -273,9 +275,9 @@ ctor Keyboard() = {
 // The var r is very important!
 proc draw_key(index: int, var r: RectangleShape, w: RenderWindow, black: bool) {
     if unsafe_get (currently_pressed_keys, index.size) > 0 do
-        r.set_fill_color Colors::Red;
+        r&.set_fill_color Colors::Red;
     else
-        r.set_fill_color$ if black then Colors::Black else Colors::White endif;
+        r&.set_fill_color$ if black then Colors::Black else Colors::White endif;
     done
 
     w.draw r;
@@ -300,6 +302,9 @@ ctor PlayerScreen(midi: MidiFile::MidiFile) =>
     let nf = NoteFall midi in
     PlayerScreen (new Progress (nf.last_ms, nf.begin_msec), new nf,
                   new #Keyboard);
+/* ctor PlayerScreen(midi: MidiFile::MidiFile) => */
+    /* PlayerScreen (C_hack::null[Progress], C_hack::null[NoteFall], */
+    /* C_hack::null[Keyboard]); */
 
 proc draw_onto(self: PlayerScreen, w: RenderWindow) {
     draw_onto (self.n, w);

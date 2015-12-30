@@ -22,12 +22,12 @@ object RootWindow() = {
 
     // XXX: The parens here are due to felix-lang/felix#77.
     font = #Font;
-    if not (font.load_from_file$ this/'data'/'Arial.ttf') do
+    if not (font&.load_from_file$ this/'data'/'Arial.ttf') do
         eprintln 'Cannot open font data!!\n';
         System::exit 1;
     done
 
-    w := RenderWindow (values.video_mode, 'midifi');
+    var w = RenderWindow (values.video_mode, 'midifi');
     show_fps := Env::getenv 'SHOWFPS' == 'true';
 
     method proc run() {
