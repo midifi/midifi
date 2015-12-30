@@ -30,6 +30,7 @@ track_colors := varray[Color] (
 // We can't initialize these here because values hasn't been created yet.
 var currently_pressed_keys: varray[int];
 numerator := 0;
+initial_ms := 0.0f;
 
 
 proc event_callback(is_on: bool, key: short) {
@@ -56,7 +57,6 @@ fun ms_to_str(ms: uint) =>
 
 
 struct Progress {
-    initial_ms: float;
     last_ms: float;
     begin_msec: float;
     finished: RectangleShape;
@@ -65,7 +65,7 @@ struct Progress {
     total_time: Text;
 }
 
-ctor Progress(initial_ms: float, last_ms: float, begin_msec: float) = {
+ctor Progress(last_ms: float, begin_msec: float) = {
     var finished = RectangleShape$ Vector2f (0.0f, values.progress_height);
     var left = RectangleShape$ Vector2f (values.window_width.float,
                                          values.progress_height);
@@ -92,8 +92,8 @@ ctor Progress(initial_ms: float, last_ms: float, begin_msec: float) = {
                               total_time.local_bounds.width,
                               values.time_draw_pos.y);
 
-    return Progress (initial_ms, last_ms, begin_msec, finished, left,
-                     finished_time, total_time);
+    return Progress (last_ms, begin_msec, finished, left, finished_time,
+                     total_time);
 }
 
 proc draw_onto(self: &Progress, w: RenderWindow) {
@@ -103,10 +103,10 @@ proc draw_onto(self: &Progress, w: RenderWindow) {
 
     finished_ms := #ms;
 
-    if finished_ms < self*.initial_ms.uint do
+    if finished_ms < initial_ms.uint do
         self.finished_time.set_string '0:00';
     else
-        self.finished_time.set_string (finished_ms - self*.initial_ms.uint)
+        self.finished_time.set_string (finished_ms - initial_ms.uint)
                                       .ms_to_str;
     done
 
@@ -119,7 +119,6 @@ proc draw_onto(self: &Progress, w: RenderWindow) {
 
 struct NoteFall {
     view: View;
-    initial_ms: float;
     bottom: float;
     last_ms: float;
     begin_msec: float;
@@ -129,8 +128,7 @@ struct NoteFall {
 ctor NoteFall(midi: MidiFile::MidiFile) = {
     view := View$ FloatRect (0.0f, 0.0f, values.window_width.float,
                              values.window_height.float);
-    self := NoteFall (view, 0.0f, 0.0f, 0.0f, 0.0f,
-                      #mkvec[stl_vector[RectangleShape]]);
+    self := NoteFall (view, 0.0f, 0.0f, 0.0f, #mkvec[stl_vector[RectangleShape]]);
     midi.link_note_pairs;
     midi.do_time_analysis;
 
@@ -207,8 +205,8 @@ ctor NoteFall(midi: MidiFile::MidiFile) = {
                              rx*.rsize.y);
         done
 
-    self.initial_ms = numerator.float * deltatime * midi.tpq.float;
-    initial_space := self.initial_ms * values.ms_height;
+    initial_ms = numerator.float * deltatime * midi.tpq.float;
+    initial_space := initial_ms * values.ms_height;
     self.bottom = self.bottom + initial_space;
     self.begin_msec = numerator.float * deltatime * midi.tpq.float;
     self.last_ms = self.last_ms + self.begin_msec;
@@ -268,10 +266,13 @@ ctor Keyboard() = {
 
 // The `var r` is very important!
 proc draw_key(index: int, var r: RectangleShape, w: RenderWindow, black: bool) {
-    if unsafe_get (currently_pressed_keys, index.size) > 0 do
+    default_color := if black then Colors::Black else Colors::White endif;
+    if #ms < initial_ms.uint do
+        r&.set_fill_color default_color;
+    elif unsafe_get (currently_pressed_keys, index.size) > 0 do
         r&.set_fill_color Colors::Red;
     else
-        r&.set_fill_color$ if black then Colors::Black else Colors::White endif;
+        r&.set_fill_color default_color;
     done
 
     w.draw r;
@@ -294,7 +295,7 @@ struct PlayerScreen {
 
 ctor PlayerScreen(midi: MidiFile::MidiFile) =>
     let nf = NoteFall midi in
-    PlayerScreen (new Progress (nf.initial_ms, nf.last_ms, nf.begin_msec), new nf,
+    PlayerScreen (new Progress (nf.last_ms, nf.begin_msec), new nf,
                   new #Keyboard);
 
 proc draw_onto(self: PlayerScreen, w: RenderWindow) {
