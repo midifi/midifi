@@ -56,6 +56,7 @@ fun ms_to_str(ms: uint) =>
 
 
 struct Progress {
+    initial_ms: float;
     last_ms: float;
     begin_msec: float;
     finished: RectangleShape;
@@ -64,7 +65,7 @@ struct Progress {
     total_time: Text;
 }
 
-ctor Progress(last_ms: float, begin_msec: float) = {
+ctor Progress(initial_ms: float, last_ms: float, begin_msec: float) = {
     var finished = RectangleShape$ Vector2f (0.0f, values.progress_height);
     var left = RectangleShape$ Vector2f (values.window_width.float,
                                          values.progress_height);
@@ -91,8 +92,8 @@ ctor Progress(last_ms: float, begin_msec: float) = {
                               total_time.local_bounds.width,
                               values.time_draw_pos.y);
 
-    return Progress (last_ms, begin_msec, finished, left, finished_time,
-                     total_time);
+    return Progress (initial_ms, last_ms, begin_msec, finished, left,
+                     finished_time, total_time);
 }
 
 proc draw_onto(self: &Progress, w: RenderWindow) {
@@ -102,7 +103,12 @@ proc draw_onto(self: &Progress, w: RenderWindow) {
 
     finished_ms := #ms;
 
-    self.finished_time.set_string finished_ms.ms_to_str;
+    if finished_ms < self*.initial_ms.uint do
+        self.finished_time.set_string '0:00';
+    else
+        self.finished_time.set_string (finished_ms - self*.initial_ms.uint)
+                                      .ms_to_str;
+    done
 
     w.draw self*.left;
     w.draw self*.finished;
@@ -113,6 +119,7 @@ proc draw_onto(self: &Progress, w: RenderWindow) {
 
 struct NoteFall {
     view: View;
+    initial_ms: float;
     bottom: float;
     last_ms: float;
     begin_msec: float;
@@ -122,7 +129,8 @@ struct NoteFall {
 ctor NoteFall(midi: MidiFile::MidiFile) = {
     view := View$ FloatRect (0.0f, 0.0f, values.window_width.float,
                              values.window_height.float);
-    self := NoteFall (view, 0.0f, 0.0f, 0.0f, #mkvec[stl_vector[RectangleShape]]);
+    self := NoteFall (view, 0.0f, 0.0f, 0.0f, 0.0f,
+                      #mkvec[stl_vector[RectangleShape]]);
     midi.link_note_pairs;
     midi.do_time_analysis;
 
@@ -194,12 +202,13 @@ ctor NoteFall(midi: MidiFile::MidiFile) = {
     // We need to now flip all the tracks upside-down.
     for (var ti = self.tracks.begin; ti != self.tracks.end; ++ti;) perform
         for (var ni = (*ti).begin; ni != (*ti).end; ++ni;) do
-            var r = &*ni;
-            r.set_position (r.position.x, self.bottom - r.position.y - r.rsize.y);
+            var rx = cexpr[&RectangleShape] '&*$1' ni endcexpr;
+            rx.set_position (rx*.position.x, self.bottom - rx*.position.y -
+                             rx*.rsize.y);
         done
 
-    initial_space := numerator.float * deltatime * midi.tpq.float *
-                     values.ms_height;
+    self.initial_ms = numerator.float * deltatime * midi.tpq.float;
+    initial_space := self.initial_ms * values.ms_height;
     self.bottom = self.bottom + initial_space;
     self.begin_msec = numerator.float * deltatime * midi.tpq.float;
     self.last_ms = self.last_ms + self.begin_msec;
@@ -285,7 +294,7 @@ struct PlayerScreen {
 
 ctor PlayerScreen(midi: MidiFile::MidiFile) =>
     let nf = NoteFall midi in
-    PlayerScreen (new Progress (nf.last_ms, nf.begin_msec), new nf,
+    PlayerScreen (new Progress (nf.initial_ms, nf.last_ms, nf.begin_msec), new nf,
                   new #Keyboard);
 
 proc draw_onto(self: PlayerScreen, w: RenderWindow) {
