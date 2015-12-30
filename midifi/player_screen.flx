@@ -1,8 +1,6 @@
 include 'stl/stl_vector';
 
 rename fun mkvec[T] = Stl_Vector::create[T];
-// XXX: Not type-safe in the Felix world!
-proc set_vec_iterator[I,T]: I * T = '*$1 = $2;';
 
 
 // DO NOT PASS A0-B0!!!
@@ -98,22 +96,18 @@ ctor Progress(last_ms: float, begin_msec: float) = {
 }
 
 proc draw_onto(self: &Progress, w: RenderWindow) {
-    /* finished := self*.finished; */
     new_width := (#ms.float / self*.last_ms) * values.window_width.float;
     if new_width < values.window_width.float perform
         self.finished.set_size$ Vector2f (new_width, values.progress_height);
 
     finished_ms := #ms;
 
-    /* finished_time := self*.finished_time; */
     self.finished_time.set_string finished_ms.ms_to_str;
 
     w.draw self*.left;
     w.draw self*.finished;
     w.draw self*.finished_time;
     w.draw self*.total_time;
-    /* self*.finished = finished; */
-    /* self*.finished_time = finished_time; */
 }
 
 
@@ -200,11 +194,8 @@ ctor NoteFall(midi: MidiFile::MidiFile) = {
     // We need to now flip all the tracks upside-down.
     for (var ti = self.tracks.begin; ti != self.tracks.end; ++ti;) perform
         for (var ni = (*ti).begin; ni != (*ti).end; ++ni;) do
-            // XXX: Work around optimizing (see comment in draw_onto).
-            r = *ni;
-            r&.set_position (r.position.x, self.bottom - r.position.y -
-                                           r.rsize.y);
-            set_vec_iterator (ni, r);
+            var r = &*ni;
+            r.set_position (r.position.x, self.bottom - r.position.y - r.rsize.y);
         done
 
     initial_space := numerator.float * deltatime * midi.tpq.float *
@@ -217,16 +208,10 @@ ctor NoteFall(midi: MidiFile::MidiFile) = {
 }
 
 proc draw_onto(self: &NoteFall, w: RenderWindow) {
-    /*
-       XXX: This is to get around Felix optimizing-out a bunch of stuff that
-       cause the view to NEVER MOVE.
-    */
-    v := self.view;
     space_bottom := values.window_height.float / 2.0f - values.white_key_height;
-    v.set_center$ Vector2f (v*.center.x, self*.bottom - space_bottom -
-                            #ms.float * values.ms_height);
-    w.set_view$ *v;
-    /* *self.view = v; */
+    self.view.set_center$ Vector2f (self*.view.center.x, self*.bottom -
+                                    space_bottom - #ms.float * values.ms_height);
+    w.set_view self*.view;
 
     for (var ti = self*.tracks.begin; ti != self*.tracks.end; ++ti;) perform
         for (var ni = (*ti).begin; ni != (*ti).end; ++ni;) perform
@@ -272,7 +257,7 @@ ctor Keyboard() = {
     return self;
 }
 
-// The var r is very important!
+// The `var r` is very important!
 proc draw_key(index: int, var r: RectangleShape, w: RenderWindow, black: bool) {
     if unsafe_get (currently_pressed_keys, index.size) > 0 do
         r&.set_fill_color Colors::Red;
@@ -302,9 +287,6 @@ ctor PlayerScreen(midi: MidiFile::MidiFile) =>
     let nf = NoteFall midi in
     PlayerScreen (new Progress (nf.last_ms, nf.begin_msec), new nf,
                   new #Keyboard);
-/* ctor PlayerScreen(midi: MidiFile::MidiFile) => */
-    /* PlayerScreen (C_hack::null[Progress], C_hack::null[NoteFall], */
-    /* C_hack::null[Keyboard]); */
 
 proc draw_onto(self: PlayerScreen, w: RenderWindow) {
     draw_onto (self.n, w);
