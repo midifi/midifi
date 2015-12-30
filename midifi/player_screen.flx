@@ -63,7 +63,7 @@ struct Progress {
     finished: RectangleShape;
     left: RectangleShape;
     finished_time: Text;
-    left_time: Text;
+    total_time: Text;
 }
 
 ctor Progress(last_ms: float, begin_msec: float) = {
@@ -79,17 +79,21 @@ ctor Progress(last_ms: float, begin_msec: float) = {
     left.set_outline_color Colors::Black;
     left.set_outline_thickness values.line_width;
 
-    finished_time := #Text;
-    left_time := #Text;
-    forall time in finished_time, left_time do
+    forall time in finished_time, total_time do
+        time := #Text;
         time.set_font font;
         time.set_color Colors::Black;
         time.set_character_size values.progress_time_height.uint;
         time.set_position values.time_draw_pos;
     done
 
+    total_time.set_string last_ms.uint.ms_to_str;
+    total_time.set_position (values.window_width.float - values.time_draw_pos.x -
+                             total_time.local_bounds.width,
+                             values.time_draw_pos.y);
+
     return Progress (last_ms, begin_msec, finished, left, finished_time,
-                     left_time);
+                     total_time);
 }
 
 proc draw_onto(self: &Progress, w: RenderWindow) {
@@ -106,6 +110,7 @@ proc draw_onto(self: &Progress, w: RenderWindow) {
     w.draw self*.left;
     w.draw finished;
     w.draw finished_time;
+    w.draw self*.total_time;
     self*.finished = finished;
     self*.finished_time = finished_time;
 }
