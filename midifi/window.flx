@@ -21,7 +21,7 @@ object RootWindow() = {
     fluid = FluidData (path, this/'data'/'FluidR3_GM.sf2', midi.tpq, numerator);
 
     // XXX: The parens here are due to felix-lang/felix#77.
-    font := #Font;
+    font = #Font;
     if not (font.load_from_file$ this/'data'/'Arial.ttf') do
         eprintln 'Cannot open font data!!\n';
         System::exit 1;
