@@ -18,7 +18,8 @@ object RootWindow() = {
 
     ps := PlayerScreen midi;
     // XXX: Custom soundfonts should probably be an option.
-    fluid = FluidData (path, this/'data'/'FluidR3_GM.sf2', midi.tpq, numerator);
+    fluid = FluidData (path, this/'data'/'FluidR3_GM.sf2', midi.tpq, numerator,
+                       deltatime);
 
     // XXX: The parens here are due to felix-lang/felix#77.
     font = #Font;

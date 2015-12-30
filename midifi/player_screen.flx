@@ -30,6 +30,7 @@ track_colors := varray[Color] (
 // We can't initialize these here because values hasn't been created yet.
 var currently_pressed_keys: varray[int];
 numerator := 0;
+deltatime := 0.0f;
 initial_ms := 0.0f;
 
 
@@ -191,7 +192,7 @@ ctor NoteFall(midi: MidiFile::MidiFile) = {
         push_back (self.tracks, track);
     done
 
-    deltatime := match first_event with
+    deltatime = match first_event with
         | Some event => event.duration_in_seconds.seconds_to_ms.float /
                         event.tick_duration.float
         | #None => 1.0f
