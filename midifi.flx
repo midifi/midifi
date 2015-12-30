@@ -1,7 +1,8 @@
 include 'midifi/__init__';
 
-values := make_values$ if Env::getenv 'AUTOMODE' == 'true'
+automode := Env::getenv 'AUTOMODE' == 'true';
+values := make_values$ if automode
     then #desktop_mode
     else VideoMode (800u,  600u) endif;
-w := #RootWindow;
+w := RootWindow automode;
 #(w.run);

@@ -4,7 +4,7 @@ var font: Font;
 gen error_msg: unit -> string = '::std::string(strerror(errno))';
 fun /(l: string, r: string) => Filename::join (l, r);
 
-object RootWindow() = {
+object RootWindow(fullscreen: bool) = {
     midi := #MidiFile::MidiFile;
     path := '/home/ryan/Documents/piano_req.midi.mid';
     this := Filename::dirname$ System::argv 0;
@@ -28,7 +28,9 @@ object RootWindow() = {
         System::exit 1;
     done
 
-    var w = RenderWindow (values.video_mode, 'midifi');
+    var w = RenderWindow (values.video_mode, 'midifi',
+                          if fullscreen then Style::Fullscreen
+                          else Style::Default endif);
     show_fps := Env::getenv 'SHOWFPS' == 'true';
 
     method proc run() {
