@@ -107,8 +107,7 @@ proc draw_onto(self: &Progress, w: RenderWindow) {
     if finished_ms < initial_ms.uint do
         self.finished_time.set_string '0:00';
     else
-        self.finished_time.set_string (finished_ms - initial_ms.uint)
-                                      .ms_to_str;
+        self.finished_time.set_string (finished_ms - initial_ms.uint).ms_to_str;
     done
 
     w.draw self*.left;
