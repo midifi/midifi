@@ -49,6 +49,9 @@ object RootWindow(fullscreen: bool) = {
                         if fluid.paused do fluid.play;
                         else fluid.pause; done
                     done
+                elif event.etype == EventType::MouseButtonPressed do
+                    if event.mouse_button.button == Buttons::Left call
+                        handle_click (ps, event.mouse_button);
                 done
 
             if not (fluid.playing or fluid.paused) do
