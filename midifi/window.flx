@@ -41,12 +41,17 @@ object RootWindow(fullscreen: bool) = {
         while w.isopen do
             var event: Event;
             while w.poll_event &event perform
-                if event.type == EventType::Closed do
+                if event.etype == EventType::Closed do
                     w.close;
                     return;
-            done
+                elif event.etype == EventType::KeyPressed do
+                    if event.key.code == KeyCodes::Space do
+                        if fluid.paused do fluid.play;
+                        else fluid.pause; done
+                    done
+                done
 
-            if not fluid.playing do
+            if not (fluid.playing or fluid.paused) do
                 w.close;
                 return;
             done
