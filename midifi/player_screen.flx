@@ -54,7 +54,13 @@ fun is_timesig(event: MidiEvent) =>
 
 fun ms_to_str(ms: uint) =>
     let sec = ms.float / 1000.0f in
-    f"%d:%S" ((sec / 60.0f).int, (sec % 60.0f).str);
+    let secs = let s = str$ sec % 60.0f in match split_first (s, '.') with
+        | Some (a, b) => let a' = if a.len == 1zu
+                         then '0' + a
+                         else a endif in f"%S.%S" (a', b)
+        | #None  => s
+    endmatch in
+    f"%d:%S" ((sec / 60.0f).int, secs);
 
 
 struct Progress {
