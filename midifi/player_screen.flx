@@ -88,10 +88,7 @@ ctor Progress(last_ms: float, begin_msec: float) = {
         time&.set_position values.time_draw_pos;
     done
 
-    total_time&.set_string last_ms.uint.ms_to_str;
-    total_time&.set_position (values.window_width.float - values.time_draw_pos.x -
-                              total_time.local_bounds.width,
-                              values.time_draw_pos.y);
+    total_time&.set_string$ (last_ms - initial_ms).uint.ms_to_str;
 
     return Progress (last_ms, begin_msec, finished, left, finished_time,
                      total_time);
@@ -116,6 +113,11 @@ proc draw_onto(self: &Progress, w: RenderWindow) {
     else
         self.finished_time.set_string (finished_ms - initial_ms.uint).ms_to_str;
     done
+
+    self.total_time.set_position (values.window_width.float -
+                                  values.time_draw_pos.x -
+                                  self*.total_time.local_bounds.width,
+                                  values.time_draw_pos.y);
 
     w.draw self*.left;
     w.draw self*.finished;
