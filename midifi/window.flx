@@ -11,7 +11,7 @@ union Action =
 ;
 
 
-object RootWindow(fullscreen: bool) = {
+object RootWindow() = {
     midi := #MidiFile::MidiFile;
     path := '/home/ryan/Documents/piano_req.midi.mid';
     this := Filename::dirname$ System::argv 0;
@@ -35,9 +35,7 @@ object RootWindow(fullscreen: bool) = {
         System::exit 1;
     done
 
-    var w = RenderWindow (values.video_mode, 'midifi',
-                          if fullscreen then Style::Fullscreen
-                          else Style::Default endif);
+    w := RenderWindow (values.video_mode, 'midifi', Style::Fullscreen);
     show_fps := Env::getenv 'SHOWFPS' == 'true';
 
     method proc run() {
