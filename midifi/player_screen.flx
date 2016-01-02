@@ -104,7 +104,8 @@ fun in_bounds(self: &Progress, point: Vector2f) =>
     point.y < values.progress_height;
 
 proc handle_click(self: &Progress, m: MouseButtonEvent) {
-    /* ; */
+    new_ms := (m.x.float / values.window_width.float) * self*.last_ms;
+    fluid.seek new_ms.uint;
 }
 
 proc draw_onto(self: &Progress, w: RenderWindow) {

@@ -18,6 +18,7 @@ struct MidifiFluidData {
     bool paused();
     void play();
     void pause();
+    void seek(unsigned int ms);
     void setup_ticks();
 
     std::string path;
@@ -40,7 +41,6 @@ body fluid_body = '''
 unsigned int midifi_ms = 0;
 
 static int ms_offset = 0;
-
 
 extern "C" int midifi_fluid_callback(void* vplayer, unsigned int ms) {
     midifi_ms = ms+ms_offset;
@@ -115,6 +115,10 @@ void MidifiFluidData::pause() {
     ms_offset = midifi_ms;
 }
 
+void MidifiFluidData::seek(unsigned int ms) {
+    // TODO
+}
+
 void MidifiFluidData::setup_ticks() {
     fluid_track_t* track = new_fluid_track(fluid_player_count_tracks(player));
     int weak_note=33, strong_note=34;
@@ -158,6 +162,8 @@ ctor FluidData: string * string * int * int * float =
     'new MidifiFluidData($1, $2, $3, $4, $5, FLX_POINTER_TO_THREAD_FRAME)';
 proc play: FluidData = '$1->play();';
 proc pause: FluidData = '$1->pause();';
+proc seek: FluidData * uint = '$1->seek($2);';
+proc seek(f: FluidData)(ms: uint) => seek (f, ms);
 fun playing: FluidData -> bool = '$1->playing()';
 fun paused: FluidData -> bool = '$1->paused()';
 
