@@ -1,3 +1,7 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 from fbuild.builders.cxx import guess_static, guess_shared
 from fbuild.builders.c.msvc import Builder as MsvcBuilder
 from fbuild.builders.pkg_config import PkgConfig
