@@ -9,8 +9,8 @@ fun make_values(v: VideoMode) =>
 
     let white_key_width = v.width.float / white_keys_to_show.float in
     let white_key_height = v.height.float / 5.0f in
-    let progress_height = v.width.float / 30.0f in
-    let progress_time_height = progress_height * 0.6f in
+    let bar_height = v.width.float / 30.0f in
+    let text_height = bar_height * 0.6f in
     (
         video_mode = v,
 
@@ -35,10 +35,10 @@ fun make_values(v: VideoMode) =>
         black_key_width = white_key_width * 0.6f,
         black_key_height = white_key_height * 0.7f,
         octave_width = white_key_width * white_keys_per_octave.float,
-        progress_height = progress_height,
-        progress_time_height = progress_time_height,
+        bar_height = bar_height,
+        text_height = text_height,
 
-        time_draw_pos = Vector2f (5.0f, 2.0f),
+        text_draw_pos = Vector2f (5.0f, 2.0f),
 
         ms_height = 0.2f
     );

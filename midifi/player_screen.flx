@@ -73,9 +73,9 @@ struct Progress {
 }
 
 ctor Progress(last_ms: float, begin_msec: float) = {
-    var finished = RectangleShape$ Vector2f (0.0f, values.progress_height);
+    var finished = RectangleShape$ Vector2f (0.0f, values.bar_height);
     var left = RectangleShape$ Vector2f (values.window_width.float,
-                                         values.progress_height);
+                                         values.bar_height);
     finished&.set_fill_color$ values.dark_green - values.darken_color;
     left&.set_fill_color$ Colors::White - values.darken_color;
 
@@ -90,8 +90,8 @@ ctor Progress(last_ms: float, begin_msec: float) = {
     forall time in finished_time, total_time do
         time&.set_font font;
         time&.set_color Colors::Black;
-        time&.set_character_size values.progress_time_height.uint;
-        time&.set_position values.time_draw_pos;
+        time&.set_character_size values.text_height.uint;
+        time&.set_position values.text_draw_pos;
     done
 
     total_time&.set_string$ (last_ms - initial_ms).uint.ms_to_str;
@@ -101,7 +101,7 @@ ctor Progress(last_ms: float, begin_msec: float) = {
 }
 
 fun in_bounds(self: &Progress, point: Vector2f) =>
-    point.y < values.progress_height;
+    point.y < values.bar_height;
 
 proc handle_click(self: &Progress, m: MouseButtonEvent) {
     new_ms := (m.x.float / values.window_width.float) * self*.last_ms;
@@ -111,7 +111,7 @@ proc handle_click(self: &Progress, m: MouseButtonEvent) {
 proc draw_onto(self: &Progress, w: RenderWindow) {
     new_width := (#ms.float / self*.last_ms) * values.window_width.float;
     if new_width < values.window_width.float perform
-        self.finished.set_size$ Vector2f (new_width, values.progress_height);
+        self.finished.set_size$ Vector2f (new_width, values.bar_height);
 
     finished_ms := #ms;
 
@@ -122,9 +122,9 @@ proc draw_onto(self: &Progress, w: RenderWindow) {
     done
 
     self.total_time.set_position (values.window_width.float -
-                                  values.time_draw_pos.x -
+                                  values.text_draw_pos.x -
                                   self*.total_time.local_bounds.width,
-                                  values.time_draw_pos.y);
+                                  values.text_draw_pos.y);
 
     w.draw self*.left;
     w.draw self*.finished;
