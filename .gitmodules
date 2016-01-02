@@ -2,3 +2,13 @@
 	path = fluidsynth
 	url = http://git.code.sf.net/p/fluidsynth/code-git
 	ignore = dirty
+[submodule "sfml"]
+	path = sfml
+	url = https://github.com/midifi/sfml.git
+[submodule "midifile-flx"]
+	path = midifile-flx
+	url = https://github.com/midifi/midifile-flx.git
+[submodule "midifile"]
+	path = midifile
+	url = https://github.com/midifi/midifile.git
+	branch = spt
