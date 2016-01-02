@@ -63,6 +63,53 @@ fun ms_to_str(ms: uint) =>
     f"%d:%S" ((sec / 60.0f).int, secs);
 
 
+proc right_align(t: &Text) =>
+    t.set_position (values.window_width.float - values.text_draw_pos.x -
+                    t*.local_bounds.width, t*.position.y);
+
+
+struct Menu {
+    rect: RectangleShape;
+    playpause: Text;
+    exit: Text;
+}
+
+ctor Menu() = {
+    var self = Menu (RectangleShape (Vector2f (values.window_width.float,
+                                               values.bar_height)),
+                     #Text, #Text);
+
+    self&.rect.set_fill_color Colors::Blue;
+
+    forall text in self&.playpause, self&.exit do
+        text.set_font font;
+        text.set_character_size values.text_height.uint;
+        text.set_position values.text_draw_pos;
+    done
+
+    self&.playpause.set_color Colors::White;
+
+    self&.exit.set_string 'X';
+    self&.exit.set_color Colors::Red;
+
+    return self;
+}
+
+fun in_bounds(self: &Menu, point: Vector2f) =>
+    point.y < values.bar_height;
+
+proc handle_click(self: &Menu, m: MouseButtonEvent) {
+    println 'Menu is handling click';
+}
+
+proc draw_onto(self: &Menu, w: RenderWindow) {
+    w.draw self*.rect;
+    w.draw self*.playpause;
+    self.exit.right_align;
+    w.draw self*.exit;
+}
+
+
 struct Progress {
     last_ms: float;
     begin_msec: float;
@@ -79,11 +126,11 @@ ctor Progress(last_ms: float, begin_msec: float) = {
     finished&.set_fill_color$ values.dark_green - values.darken_color;
     left&.set_fill_color$ Colors::White - values.darken_color;
 
-    finished&.set_outline_color Colors::Black;
-    finished&.set_outline_thickness values.line_width;
-
-    left&.set_outline_color Colors::Black;
-    left&.set_outline_thickness values.line_width;
+    forall bar in finished, left do
+        bar&.set_outline_color Colors::Black;
+        bar&.set_outline_thickness values.line_width;
+        bar&.set_position (0.0f, values.bar_height);
+    done
 
     var finished_time = #Text;
     var total_time = #Text;
@@ -91,7 +138,8 @@ ctor Progress(last_ms: float, begin_msec: float) = {
         time&.set_font font;
         time&.set_color Colors::Black;
         time&.set_character_size values.text_height.uint;
-        time&.set_position values.text_draw_pos;
+        time&.set_position$ values.text_draw_pos + Vector2f (0.0f,
+                                                             values.bar_height);
     done
 
     total_time&.set_string$ (last_ms - initial_ms).uint.ms_to_str;
@@ -101,7 +149,7 @@ ctor Progress(last_ms: float, begin_msec: float) = {
 }
 
 fun in_bounds(self: &Progress, point: Vector2f) =>
-    point.y < values.bar_height;
+    point.y < values.bar_height * 2.0f;
 
 proc handle_click(self: &Progress, m: MouseButtonEvent) {
     new_ms := (m.x.float / values.window_width.float) * self*.last_ms;
@@ -121,10 +169,7 @@ proc draw_onto(self: &Progress, w: RenderWindow) {
         self.finished_time.set_string (finished_ms - initial_ms.uint).ms_to_str;
     done
 
-    self.total_time.set_position (values.window_width.float -
-                                  values.text_draw_pos.x -
-                                  self*.total_time.local_bounds.width,
-                                  values.text_draw_pos.y);
+    self.total_time.right_align;
 
     w.draw self*.left;
     w.draw self*.finished;
@@ -230,10 +275,6 @@ ctor NoteFall(midi: MidiFile::MidiFile) = {
     return self;
 }
 
-/*
-   We don't check if it overlaps with Progress, because then it would have already
-   handled it!
-*/
 fun in_bounds(self: &NoteFall, point: Vector2f) =>
     point.y < values.window_height.float - values.white_key_height;
 
@@ -318,6 +359,7 @@ proc draw_onto(self: &Keyboard, w: RenderWindow) {
 
 
 struct PlayerScreen {
+    m: &Menu;
     p: &Progress;
     n: &NoteFall;
     kb: &Keyboard;
@@ -325,12 +367,13 @@ struct PlayerScreen {
 
 ctor PlayerScreen(midi: MidiFile::MidiFile) =>
     let nf = NoteFall midi in
-    PlayerScreen (new Progress (nf.last_ms, nf.begin_msec), new nf,
+    PlayerScreen (new #Menu, new Progress (nf.last_ms, nf.begin_msec), new nf,
                   new #Keyboard);
 
 proc handle_click(self: PlayerScreen, m: MouseButtonEvent) {
     point := Vector2f (m.x.float, m.y.float);
-    if in_bounds (self.p, point) do handle_click (self.p, m);
+    if in_bounds (self.m, point) do handle_click (self.m, m);
+    elif in_bounds (self.p, point) do handle_click (self.p, m);
     elif in_bounds (self.n, point) do handle_click (self.n, m);
     elif in_bounds (self.kb, point) do handle_click (self.kb, m);
     done
@@ -339,5 +382,6 @@ proc handle_click(self: PlayerScreen, m: MouseButtonEvent) {
 proc draw_onto(self: PlayerScreen, w: RenderWindow) {
     draw_onto (self.n, w);
     draw_onto (self.kb, w);
+    draw_onto (self.m, w);
     draw_onto (self.p, w);
 }
