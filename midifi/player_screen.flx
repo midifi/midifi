@@ -98,14 +98,16 @@ ctor Menu() = {
 fun in_bounds(self: &Menu, point: Vector2f) =>
     point.y < values.bar_height;
 
-proc handle_click(self: &Menu, m: MouseButtonEvent) {
+gen handle_click(self: &Menu, m: MouseButtonEvent) = {
     point := Vector2f (m.x.float, m.y.float);
     if contains (self*.playpause.global_bounds, point) do
         if fluid.paused do fluid.play;
         else fluid.pause; done
     elif contains (self*.exit.global_bounds, point) do
-        println 'Closing...';
+        return Aclose;
     done
+
+    return Anothing;
 }
 
 proc draw_onto(self: &Menu, w: RenderWindow) {
@@ -158,9 +160,10 @@ ctor Progress(last_ms: float, begin_msec: float) = {
 fun in_bounds(self: &Progress, point: Vector2f) =>
     point.y < values.bar_height * 2.0f;
 
-proc handle_click(self: &Progress, m: MouseButtonEvent) {
+gen handle_click(self: &Progress, m: MouseButtonEvent) = {
     new_ms := (m.x.float / values.window_width.float) * self*.last_ms;
     fluid.seek new_ms.uint;
+    return Anothing;
 }
 
 proc draw_onto(self: &Progress, w: RenderWindow) {
@@ -285,7 +288,7 @@ ctor NoteFall(midi: MidiFile::MidiFile) = {
 fun in_bounds(self: &NoteFall, point: Vector2f) =>
     point.y < values.window_height.float - values.white_key_height;
 
-proc handle_click(self: &NoteFall, m: MouseButtonEvent) {}
+gen handle_click(self: &NoteFall, m: MouseButtonEvent) => Anothing;
 
 proc draw_onto(self: &NoteFall, w: RenderWindow) {
     space_bottom := values.window_height.float / 2.0f - values.white_key_height;
@@ -340,7 +343,7 @@ ctor Keyboard() = {
 fun in_bounds(self: &Keyboard, point: Vector2f) =>
     point.y >= (values.window_height.float - values.white_key_height);
 
-proc handle_click(self: &Keyboard, m: MouseButtonEvent) {}
+gen handle_click(self: &Keyboard, m: MouseButtonEvent) => Anothing;
 
 // The `var r` is very important!
 proc draw_key(index: int, var r: RectangleShape, w: RenderWindow, black: bool) {
@@ -377,13 +380,13 @@ ctor PlayerScreen(midi: MidiFile::MidiFile) =>
     PlayerScreen (new #Menu, new Progress (nf.last_ms, nf.begin_msec), new nf,
                   new #Keyboard);
 
-proc handle_click(self: PlayerScreen, m: MouseButtonEvent) {
+gen handle_click(self: PlayerScreen, m: MouseButtonEvent) = {
     point := Vector2f (m.x.float, m.y.float);
-    if in_bounds (self.m, point) do handle_click (self.m, m);
-    elif in_bounds (self.p, point) do handle_click (self.p, m);
-    elif in_bounds (self.n, point) do handle_click (self.n, m);
-    elif in_bounds (self.kb, point) do handle_click (self.kb, m);
-    done
+    if in_bounds (self.m, point) do return handle_click (self.m, m);
+    elif in_bounds (self.p, point) do return handle_click (self.p, m);
+    elif in_bounds (self.n, point) do return handle_click (self.n, m);
+    elif in_bounds (self.kb, point) do return handle_click (self.kb, m);
+    else return Anothing; done
 }
 
 proc draw_onto(self: PlayerScreen, w: RenderWindow) {

@@ -4,6 +4,13 @@ var font: Font;
 gen error_msg: unit -> string = '::std::string(strerror(errno))';
 fun /(l: string, r: string) => Filename::join (l, r);
 
+
+union Action =
+    | Anothing
+    | Aclose
+;
+
+
 object RootWindow(fullscreen: bool) = {
     midi := #MidiFile::MidiFile;
     path := '/home/ryan/Documents/piano_req.midi.mid';
@@ -50,8 +57,15 @@ object RootWindow(fullscreen: bool) = {
                         else fluid.pause; done
                     done
                 elif event.etype == EventType::MouseButtonPressed do
-                    if event.mouse_button.button == Buttons::Left call
-                        handle_click (ps, event.mouse_button);
+                    if event.mouse_button.button == Buttons::Left do
+                        action := handle_click (ps, event.mouse_button);
+                        match action with
+                            | #Anothing => ;
+                            | #Aclose =>
+                                w.close;
+                                return;
+                        endmatch;
+                    done
                 done
 
             if not (fluid.playing or fluid.paused) do
