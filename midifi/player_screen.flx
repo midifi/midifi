@@ -99,11 +99,18 @@ fun in_bounds(self: &Menu, point: Vector2f) =>
     point.y < values.bar_height;
 
 proc handle_click(self: &Menu, m: MouseButtonEvent) {
-    println 'Menu is handling click';
+    point := Vector2f (m.x.float, m.y.float);
+    if contains (self*.playpause.global_bounds, point) do
+        if fluid.paused do fluid.play;
+        else fluid.pause; done
+    elif contains (self*.exit.global_bounds, point) do
+        println 'Closing...';
+    done
 }
 
 proc draw_onto(self: &Menu, w: RenderWindow) {
     w.draw self*.rect;
+    self.playpause.set_string$ if fluid.paused then 'Play' else 'Pause' endif;
     w.draw self*.playpause;
     self.exit.right_align;
     w.draw self*.exit;
