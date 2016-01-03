@@ -28,17 +28,26 @@ def check_fluid(linker):
     if not fluidsynth.exists():
         raise fbuild.ConfigFailed(message)
 
-def get_info_for(ctx, cxx, pkg, defaults):
-    lib_arg = '' if isinstance(cxx, MsvcBuilder) else '-l'
+def make_lib_args(cxx, path):
+    if isinstance(cxx, MsvcBuilder):
+        return path + '.lib'
+    else:
+        return '-l' + path
 
+def get_info_for(ctx, cxx, pkg, defaults):
     try:
         pkgconfig = PkgConfig(ctx, pkg)
         cflags = pkgconfig.cflags()
         libs = pkgconfig.libs()
+        if isinstance(cxx, MsvcBuilder):
+            for lib in libs.split():
+                if lib.startswith('-l'):
+                    libs = libs.replace(lib, '')
     except:
         ctx.logger.check('trying to get libs for %s' % pkg)
         cflags = []
-        libs = ' '.join(map(lib_arg.__add__, defaults.get(pkg, [])))
+        libs = ' '.join(map(lambda l: make_lib_args(cxx, l),
+                            defaults.get(pkg, [])))
         failmsg = 'failed'
         if libs:
             failmsg += ' (using defaults %s)' % libs
@@ -61,9 +70,9 @@ def gen_sfml_fpc(ctx, cxx):
     import gen_fpc
 
     default_libs = {
-        'system': ['system'],
-        'window': ['window', 'system'],
-        'graphics': ['graphics', 'window', 'system'],
+        'sfml-system': ['sfml-system'],
+        'sfml-window': ['sfml-window', 'sfml-system'],
+        'sfml-graphics': ['sfml-graphics', 'sfml-window', 'sfml-system'],
     }
 
     all_libs = {}
@@ -81,7 +90,9 @@ def gen_midifile_fpc(ctx, cxx):
                 base = base_f.read()
 
         # XXX: This is an ugly hack!
-        fpc = base.replace('lib: ', 'lib: -L%s ' % ctx.buildroot)
+        fpc = base.replace('lib: -lmidifile',
+                           'lib: -L%s %s' % (ctx.buildroot,
+                                             make_lib_args(cxx, 'midifile')))
         fpc = fpc.replace('provides_dlib',
                           'cflags: -Imidifile/include\nprovides_dlib')
 
@@ -102,7 +113,7 @@ def gen_fluid_fpc(ctx, cxx):
         all_flags += ' '.join(cflags) + ' '
         all_libs += libs + ' '
 
-    all_libs += '-Lfluidsynth/fluidsynth/src -lfluidsynth'
+    all_libs += '-Lfluidsynth/fluidsynth/src ' + make_lib_args(cxx, 'fluidsynth')
 
     fluidsynth_root = Path('fluidsynth') / 'fluidsynth'
     fluidsynth_includes = ['include', 'src/midi', 'src/utils']
@@ -283,6 +294,8 @@ def extract_soundfont(ctx, tar: fbuild.db.SRC) -> fbuild.db.DST:
             tf.extract(member, ctx.buildroot)
 
         os.rename(ctx.buildroot / member, dst)
+    except FileExistsError:
+        pass
     except:
         ctx.logger.failed()
         raise
