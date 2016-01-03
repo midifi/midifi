@@ -28,9 +28,9 @@ def check_fluid(linker):
     if not fluidsynth.exists():
         raise fbuild.ConfigFailed(message)
 
-def make_lib_args(cxx, path):
+def make_lib_args(cxx, path, shared=False):
     if isinstance(cxx, MsvcBuilder):
-        return path + '.lib'
+        return path + ('.dll' if shared else '.lib')
     else:
         return '-l' + path
 
@@ -92,7 +92,8 @@ def gen_midifile_fpc(ctx, cxx):
         # XXX: This is an ugly hack!
         fpc = base.replace('lib: -lmidifile',
                            'lib: -L%s %s' % (ctx.buildroot,
-                                             make_lib_args(cxx, 'midifile')))
+                                             make_lib_args(cxx, 'midifile',
+                                                           shared=True)))
         fpc = fpc.replace('provides_dlib',
                           'cflags: -Imidifile/include\nprovides_dlib')
 
@@ -113,7 +114,8 @@ def gen_fluid_fpc(ctx, cxx):
         all_flags += ' '.join(cflags) + ' '
         all_libs += libs + ' '
 
-    all_libs += '-Lfluidsynth/fluidsynth/src ' + make_lib_args(cxx, 'fluidsynth')
+    all_libs += '-Lfluidsynth/fluidsynth/src ' + make_lib_args(cxx, 'fluidsynth',
+                                                               shared=True)
 
     fluidsynth_root = Path('fluidsynth') / 'fluidsynth'
     fluidsynth_includes = ['include', 'src/midi', 'src/utils']
@@ -255,6 +257,7 @@ def configure(ctx):
     felix = Felix(ctx)
     extra = felix.platform_extra
     kw = dict(platform_extra=extra, platform_options=[
+        ({'windows'}, {'flags+': ['/EHsc']}),
         ({'posix'}, {'flags+': ['-std=c++11']}),
     ])
     static = guess_static(ctx, **kw)
@@ -356,8 +359,9 @@ def get_font(ctx):
     save_font(ctx, font)
 
 def build_midifile(ctx, rec):
-    return rec.static.build_lib('midifile',
-        Path.glob('midifile/src-library/*.cpp'), includes=['midifile/include'])
+    return rec.shared.build_lib('midifile',
+        Path.glob('midifile/src-library/*.cpp'), includes=['midifile/include'],
+        ckwargs={'debug': True})
 
 def build_midifi(ctx, rec, midifile):
     all_sources = []
