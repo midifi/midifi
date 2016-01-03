@@ -7,6 +7,8 @@ var font: Font;
 
 gen error_msg: unit -> string = '::std::string(strerror(errno))';
 fun /(l: string, r: string) => Filename::join (l, r);
+fun %: float * float -> float = 'fmod($1, $2)'
+    requires header '#include <math.h>';
 
 
 union Action =
