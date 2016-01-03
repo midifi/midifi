@@ -19,10 +19,12 @@ union Action =
 
 object RootWindow() = {
     midi := #MidiFile::MidiFile;
-    path := '/home/ryan/Documents/piano_req.midi.mid';
     this := Filename::dirname$ System::argv 0;
-    if System::argc == 2 perform
-        path = System::argv 1;
+    if System::argc == 2 do path := System::argv 1;
+    else
+        eprintln$ f"usage: %S <midi file to play>" (System::argv 0);
+        System::exit 1;
+    done
 
     if midi.read path == 0 do
         eprintln$ f"Error opening %S: %S" (path, #error_msg);

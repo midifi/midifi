@@ -107,8 +107,6 @@ def gen_fluid_fpc(ctx, cxx):
     all_flags = ''
     all_libs = ''
 
-    lib_arg = '' if isinstance(cxx, MsvcBuilder) else '-l'
-
     for pkg in 'glib-2.0', 'gthread-2.0':
         cflags, libs = get_info_for(ctx, cxx, pkg, {})
         all_flags += ' '.join(cflags) + ' '
@@ -359,7 +357,8 @@ def get_font(ctx):
     save_font(ctx, font)
 
 def build_midifile(ctx, rec):
-    return rec.shared.build_lib('midifile',
+    builder = rec.shared if isinstance(rec.shared, MsvcBuilder) else rec.static
+    return builder.build_lib('midifile',
         Path.glob('midifile/src-library/*.cpp'), includes=['midifile/include'],
         ckwargs={'debug': True})
 
