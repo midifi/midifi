@@ -24,7 +24,7 @@ struct Key {
 }
 
 instance Str[Key] {
-    fun str(k: Key) => f"Key (%S, %S, %d)" (k.l._strr, k.a._strr, k.d);
+    // fun str(k: Key) => f"Key (%S, %S, %d)" (k.l._strr, k.a._strr, k.d);
 }
 
 keys := (

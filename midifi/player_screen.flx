@@ -5,6 +5,7 @@
 include 'stl/stl_vector';
 
 rename fun mkvec[T] = Stl_Vector::create[T];
+fun unsafe_addr[T]: T -> &T = '&$1';
 
 
 // DO NOT PASS A0-B0!!!
@@ -275,7 +276,8 @@ ctor NoteFall(midi: MidiFile::MidiFile) = {
     // We need to now flip all the tracks upside-down.
     for (var ti = self.tracks.begin; ti != self.tracks.end; ++ti;) perform
         for (var ni = (*ti).begin; ni != (*ti).end; ++ni;) do
-            var rx = cexpr[&RectangleShape] '&*$1' ni endcexpr;
+            // var rx = cexpr[&RectangleShape] '&*$1' ni endcexpr;
+            var rx = unsafe_addr$ *ni;
             rx.set_position (rx*.position.x, self.bottom - rx*.position.y -
                              rx*.rsize.y);
         done

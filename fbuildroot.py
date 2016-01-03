@@ -37,7 +37,7 @@ def get_info_for(ctx, cxx, pkg, defaults):
         libs = pkgconfig.libs()
     except:
         ctx.logger.check('trying to get libs for %s' % pkg)
-        includes = []
+        cflags = []
         libs = ' '.join(map(lib_arg.__add__, defaults.get(pkg, [])))
         failmsg = 'failed'
         if libs:
@@ -147,7 +147,7 @@ class Felix(fbuild.db.PersistentObject):
                 self.ctx.logger.failed()
                 raise
             else:
-                if output[1] or not output[0].endswith(b'Hello, world!\n'):
+                if output[1] or not output[0].rstrip().endswith(b'Hello, world!'):
                     self.ctx.logger.failed()
                     raise fbuild.ConfigFailed(
                         'flx test program did not give correct output')
@@ -242,13 +242,14 @@ class Felix(fbuild.db.PersistentObject):
 @fbuild.db.caches
 def configure(ctx):
     felix = Felix(ctx)
-    kw = dict(platform_extra=felix.platform_extra, platform_options=[
+    extra = felix.platform_extra
+    kw = dict(platform_extra=extra, platform_options=[
         ({'posix'}, {'flags+': ['-std=c++11']}),
     ])
     static = guess_static(ctx, **kw)
     shared = guess_shared(ctx, **kw)
     gen_fpc(ctx, static)
-    check_fluid(shared.lib_linker)
+    check_fluid(static.lib_linker if 'windows' in extra else shared.lib_linker)
     return Record(static=static, shared=shared, felix=felix)
 
 #--------------------------------------------------------------------------------

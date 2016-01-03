@@ -42,6 +42,11 @@ object RootWindow() = {
     w := RenderWindow (values.video_mode, 'midifi', Style::Fullscreen);
     show_fps := Env::getenv 'SHOWFPS' == 'true';
 
+    // For older Felix versions.
+    proc cstmt(s: string) {}
+    fun endcexpr(i: int) => i;
+    fun cexpr[T](s: string)(f: int -> int) => 0.0f;
+
     method proc run() {
         fluid.play;
 
@@ -54,7 +59,7 @@ object RootWindow() = {
                     w.close;
                     return;
                 elif event.etype == EventType::KeyPressed do
-                    if event.key.code == KeyCodes::Space do
+                    if event.key.kcode == KeyCodes::Space do
                         if fluid.paused do fluid.play;
                         else fluid.pause; done
                     done
