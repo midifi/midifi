@@ -9,6 +9,14 @@ hasn't been finished yet, like:
 
 However, it's great for casual use!
 
+##Video
+
+<a href="http://www.youtube.com/watch?feature=player_embedded&v=76NMR497JK8"
+ target="_blank">
+ <img src="http://img.youtube.com/vi/76NMR497JK8/0.jpg" alt="Preview video."
+  width="240" height="180" border="10" />
+</a>
+
 ##Downloading
 
 If you're not a programmer and you use Windows, you don't need to mess with the
@@ -23,6 +31,13 @@ Right-click any midi file and click `Open with midifi`.
 ###Linux
 
 You need to call midifi from the command line with the midi file as the argument.
+
+###Controls
+
+Once the file is playing, you can click "Pause" or press the space bar to pause the
+file. Clicking "Play" or pressing the space bar again will play it.
+
+Also, clicking the large, red "X" will close Midifi.
 
 ##Building
 
