@@ -28,9 +28,11 @@ def check_fluid(linker):
     if not fluidsynth.exists():
         raise fbuild.ConfigFailed(message)
 
-def make_lib_args(cxx, path, shared=False):
+    return fluidsynth
+
+def make_lib_args(cxx, path):
     if isinstance(cxx, MsvcBuilder):
-        return path + ('.dll' if shared else '.lib')
+        return path + '.lib'
     else:
         return '-l' + path
 
@@ -92,8 +94,7 @@ def gen_midifile_fpc(ctx, cxx):
         # XXX: This is an ugly hack!
         fpc = base.replace('lib: -lmidifile',
                            'lib: -L%s %s' % (ctx.buildroot,
-                                             make_lib_args(cxx, 'midifile',
-                                                           shared=True)))
+                                             make_lib_args(cxx, 'midifile')))
         fpc = fpc.replace('provides_dlib',
                           'cflags: -Imidifile/include\nprovides_dlib')
 
@@ -104,7 +105,7 @@ def gen_midifile_fpc(ctx, cxx):
 
 @fbuild.db.caches
 def gen_fluid_fpc(ctx, cxx):
-    all_flags = ''
+    all_flags = '-I%s ' % ctx.buildroot
     all_libs = ''
 
     for pkg in 'glib-2.0', 'gthread-2.0':
@@ -112,8 +113,7 @@ def gen_fluid_fpc(ctx, cxx):
         all_flags += ' '.join(cflags) + ' '
         all_libs += libs + ' '
 
-    all_libs += '-Lfluidsynth/fluidsynth/src ' + make_lib_args(cxx, 'fluidsynth',
-                                                               shared=True)
+    all_libs += make_lib_args(cxx, 'fluidsynth')
 
     fluidsynth_root = Path('fluidsynth') / 'fluidsynth'
     fluidsynth_includes = ['include', 'src/midi', 'src/utils']
@@ -261,8 +261,9 @@ def configure(ctx):
     static = guess_static(ctx, **kw)
     shared = guess_shared(ctx, **kw)
     gen_fpc(ctx, static)
-    check_fluid(static.lib_linker if 'windows' in extra else shared.lib_linker)
-    return Record(static=static, shared=shared, felix=felix)
+    linker = static.lib_linker if 'windows' in extra else shared.lib_linker
+    fluidsynth = check_fluid(linker)
+    return Record(static=static, shared=shared, felix=felix, fluidsynth=fluidsynth)
 
 #--------------------------------------------------------------------------------
 # BUILDING.
@@ -356,6 +357,44 @@ def get_font(ctx):
     font = find_font(ctx)
     save_font(ctx, font)
 
+@fbuild.db.caches
+def save_exports(ctx, lib: fbuild.db.SRC) -> fbuild.db.DST:
+    dst = ctx.buildroot / 'fluidsynth.def'
+    ctx.logger.check(' * extracting exports', dst, color='yellow')
+    output, _ = ctx.execute(['dumpbin', '/nologo', '/exports', lib], quieter=1)
+    output = output.decode('ascii')
+    export_res = re.search(r'name(.*)Summary', output, re.DOTALL | re.MULTILINE)
+    exports = ['EXPORTS']
+    exports.extend(map(str.strip, export_res.group(1).strip().splitlines()))
+    exports.extend(['new_fluid_timer', 'delete_fluid_timer', 'new_fluid_track',
+                    'fluid_track_add_event', 'fluid_player_add_track',
+                    'fluid_player_callback'])
+    with open(dst, 'w') as f:
+        f.write('\n'.join(exports))
+
+    # Create the lib file.
+    return dst
+
+@fbuild.db.caches
+def make_lib(ctx, exports: fbuild.db.SRC, linker, fluid) -> fbuild.db.DST:
+    dst = ctx.buildroot / fluid.basename()
+    cmd = [linker.exe, '/nologo', '/def:' + exports, '/OUT:' + dst]
+    ctx.execute(cmd, str(linker), '%s -> %s' % (exports, dst), color='link')
+    return dst
+
+def copy_dll2(ctx, fluid: fbuild.db.SRC) -> fbuild.db.DST:
+    dst = ctx.buildroot / fluid.basename()
+    copy(ctx, fluid, dst)
+    return dst
+
+def copy_dll(ctx, fluid):
+    dll = fluid.replaceext('.dll')
+    if not dll.exists():
+        url = 'https://github.com/midifi/midifi/blob/master/README.md'
+        raise fbuild.ConfigFailed('cannot find %s\nsee %s for more info' % (dll,
+                                                                            url))
+    return copy_dll2(ctx, dll)
+
 def build_midifile(ctx, rec):
     builder = rec.shared if isinstance(rec.shared, MsvcBuilder) else rec.static
     return builder.build_lib('midifile',
@@ -375,5 +414,11 @@ def build(ctx):
     rec = configure(ctx)
     get_soundfont(ctx)
     get_font(ctx)
+    if isinstance(rec.static, MsvcBuilder):
+        exports = save_exports(ctx, rec.fluidsynth)
+        make_lib(ctx, exports, rec.static.lib_linker, rec.fluidsynth)
+        copy_dll(ctx, rec.fluidsynth)
+    else:
+        copy(ctx, rec.fluidsynth, ctx.buildroot / rec.fluidsynth.basename())
     midifile = build_midifile(ctx, rec)
     build_midifi(ctx, rec, midifile)

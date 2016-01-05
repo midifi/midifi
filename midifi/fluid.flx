@@ -124,7 +124,7 @@ void MidifiFluidData::seek(unsigned int ms) {
 }
 
 void MidifiFluidData::setup_ticks() {
-    fluid_track_t* track = new_fluid_track(fluid_player_count_tracks(player));
+    fluid_track_t* track = new_fluid_track(player->ntracks);
     int weak_note=33, strong_note=34;
 
     for (int i=0; i<num; ++i) {
