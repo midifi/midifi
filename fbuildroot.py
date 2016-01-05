@@ -390,7 +390,7 @@ def copy_dll2(ctx, fluid: fbuild.db.SRC) -> fbuild.db.DST:
 def copy_dll(ctx, fluid):
     dll = fluid.replaceext('.dll')
     if not dll.exists():
-        url = 'https://github.com/midifi/midifi/blob/master/README.md'
+        url = 'https://github.com/midifi/midifi/blob/master/README.md#windows-1'
         raise fbuild.ConfigFailed('cannot find %s\nsee %s for more info' % (dll,
                                                                             url))
     return copy_dll2(ctx, dll)
