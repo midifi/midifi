@@ -14,6 +14,16 @@ import fbuild
 
 import sys, re, textwrap, os, shutil, tarfile, urllib.request,\
        xml.etree.ElementTree as etree
+from optparse import make_option
+
+def pre_options(parser):
+    group = parser.add_option_group('config options')
+    group.add_options((
+        make_option('--flx', help='Use the given Felix compiler'),
+        make_option('--flxflag', help='Pass the given flag to flx'),
+        make_option('--release', help='Build a release build',
+                    action='store_true'),
+    ))
 
 def check_fluid(linker):
     fluidsynth = Path(linker.prefix + 'fluidsynth' + linker.suffix)
@@ -142,9 +152,12 @@ def gen_fpc(*args):
     gen_fluid_fpc(*args)
 
 class Felix(fbuild.db.PersistentObject):
-    def __init__(self, ctx, flx=None, flx_pkgconfig=None):
+    def __init__(self, ctx, flx=None, flx_pkgconfig=None, debug=False,
+                 optimize=False):
         self.flx = find_program(ctx, [flx or 'flx'])
         self.ctx = ctx
+        self.debug = debug
+        self.optimize = optimize
 
         self._test()
 
@@ -189,6 +202,10 @@ class Felix(fbuild.db.PersistentObject):
             process_library(lib)
 
         cmd = [self.flx, '-c', '--static']
+        if self.debug:
+            cmd.append('--debug')
+        if self.optimize:
+            cmd.append('--usage=hyperlight')
         cmd.extend(('-o', dst))
         cmd.extend('--pkgconfig-path+=' + path for path in pkgconfig_paths)
         cmd.extend('-I' + include for include in includes)
@@ -252,12 +269,17 @@ class Felix(fbuild.db.PersistentObject):
 
 @fbuild.db.caches
 def configure(ctx):
-    felix = Felix(ctx)
+    config_kw = dict()
+    if ctx.options.release:
+        config_kw['optimize'] = True
+    else:
+        config_kw['debug'] = True
+    felix = Felix(ctx, **config_kw)
     extra = felix.platform_extra
     kw = dict(platform_extra=extra, platform_options=[
         ({'windows'}, {'flags+': ['/EHsc']}),
         ({'posix'}, {'flags+': ['-std=c++11']}),
-    ])
+    ], **config_kw)
     static = guess_static(ctx, **kw)
     shared = guess_shared(ctx, **kw)
     gen_fpc(ctx, static)
