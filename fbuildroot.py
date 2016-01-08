@@ -204,6 +204,11 @@ class Felix(fbuild.db.PersistentObject):
             process_library(lib)
 
         cmd = [self.flx, '-c', '--static']
+        kw = {}
+        if 'windows' in self.platform_extra:
+            cmd.append('--toolchain=toolchain_msvc')
+            kw['env'] = os.environ.copy()
+            kw['env']['PATH'] += ';' + ctx.buildroot
         if self.debug:
             cmd.append('--debug')
         if self.optimize:
@@ -217,13 +222,18 @@ class Felix(fbuild.db.PersistentObject):
         cmd.extend(self.flags)
         cmd.append(src)
 
-        self.ctx.execute(cmd, 'flx', '%s -> %s' % (src, dst), color='link')
+        self.ctx.execute(cmd, 'flx', '%s -> %s' % (src, dst), color='link', **kw)
         return dst
 
     @fbuild.db.cachemethod
     def compile(self, dst, src: fbuild.db.SRC, others: fbuild.db.SRCS, *args,
         **kw) -> fbuild.db.DST:
         return self.uncached_compile(dst, src, *args, **kw)
+
+    @fbuild.db.cachemethod
+    def build_custom_msvc_toolchain(self):
+        self.ctx.execute(['flx', '-od', 'build', 'misc/toolchain_msvc.flx'],
+                         'building custom msvc toolchain', color='link')
 
     def uncached_run(self, path, *args, **kw):
         return self.ctx.execute([self.flx, path], *args, **kw)
@@ -440,6 +450,7 @@ def build(ctx):
     get_soundfont(ctx)
     get_font(ctx)
     if isinstance(rec.static, MsvcBuilder):
+        rec.felix.build_custom_msvc_toolchain()
         exports = save_exports(ctx, rec.fluidsynth)
         make_lib(ctx, exports, rec.static.lib_linker, rec.fluidsynth)
         copy_dll(ctx, rec.fluidsynth)
