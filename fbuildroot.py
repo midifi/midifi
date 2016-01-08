@@ -276,7 +276,7 @@ def configure(ctx):
         config_kw['optimize'] = True
     else:
         config_kw['debug'] = True
-    felix = Felix(ctx, **config_kw)
+    felix = Felix(ctx, flags=ctx.options.flxflag, **config_kw)
     extra = felix.platform_extra
     kw = dict(platform_extra=extra, platform_options=[
         ({'windows'}, {'flags+': ['/EHsc']}),
