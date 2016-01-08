@@ -20,7 +20,8 @@ def pre_options(parser):
     group = parser.add_option_group('config options')
     group.add_options((
         make_option('--flx', help='Use the given Felix compiler'),
-        make_option('--flxflag', help='Pass the given flag to flx'),
+        make_option('--flxflag', help='Pass the given flag to flx',
+                    action='append', default=[]),
         make_option('--release', help='Build a release build',
                     action='store_true'),
     ))
