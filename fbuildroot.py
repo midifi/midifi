@@ -153,11 +153,12 @@ def gen_fpc(*args):
 
 class Felix(fbuild.db.PersistentObject):
     def __init__(self, ctx, flx=None, flx_pkgconfig=None, debug=False,
-                 optimize=False):
+                 optimize=False, flags=[]):
         self.flx = find_program(ctx, [flx or 'flx'])
         self.ctx = ctx
         self.debug = debug
         self.optimize = optimize
+        self.flags = flags
 
         self._test()
 
@@ -212,6 +213,7 @@ class Felix(fbuild.db.PersistentObject):
         cmd.extend('-L' + path for path in libpaths)
         cmd.extend('-l' + lib for lib in new_libs)
         cmd.extend('--cflags=' + flag for flag in cflags)
+        cmd.extend(self.flags)
         cmd.append(src)
 
         self.ctx.execute(cmd, 'flx', '%s -> %s' % (src, dst), color='link')
