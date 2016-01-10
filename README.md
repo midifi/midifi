@@ -26,7 +26,8 @@ directions below under `Building`. Just download and run the installer!
 
 ###Windows
 
-Midifi does not work on Windows yet.
+Midifi does not work on Windows yet. See [issue #1](
+https://github.com/midifi/midifi/issues/1).
 
 ###Linux
 
