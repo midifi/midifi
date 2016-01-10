@@ -26,7 +26,7 @@ directions below under `Building`. Just download and run the installer!
 
 ###Windows
 
-Right-click any midi file and click `Open with midifi`.
+Midifi does not work on Windows yet.
 
 ###Linux
 
@@ -62,7 +62,15 @@ http://sourceforge.net/p/fluidsynth/wiki/BuildingWithCMake/). After that, run:
 $ fbuild
 ```
 
+To build in release mode:
+
+```
+$ fbuild --release
+```
+
 ###Windows
+
+Again, Windows doesn't work yet. But you can try building it anyway!
 
 Building on Windows is a tad *messy*. You **MUST** use Visual Studio and build in
 Debug mode! If you're building under Visual Studio 2015, comment out the lines that
@@ -87,7 +95,7 @@ Once CMake finishes, run:
 msbuild ALL_BUILD.vcxproj
 ```
 
-After Fluidsynth builds, you need to locate `fluidsynth_debug.lib` and
-`libfluidsynth_debug.dll` (usually they're in `src\Debug`) and copy them to
-`fluidsynth/fluidsynth/src` under the names `fluidsynth.lib` and `fluidsynth.dll`,
-respectively.
+After Fluidsynth builds, you need to locate `fluidsynth_*.lib` and
+`libfluidsynth_*.dll` (usually they're in `src\*`), where all the `*`'s are
+replaced by `debug` or `release`, and copy them to `fluidsynth/fluidsynth/src`
+under the names `fluidsynth.lib` and `fluidsynth.dll`, respectively.
