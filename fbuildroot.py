@@ -90,6 +90,10 @@ def gen_sfml_fpc(ctx, cxx):
         'sfml-graphics': ['sfml-graphics', 'sfml-window', 'sfml-system'],
     }
 
+    if not ctx.options.release:
+        default_libs = {name: map(lambda s: s+'-d', libs) \
+                        for name, libs in default_libs.items()}
+
     all_libs = {}
 
     for pkg in gen_fpc.packages:
