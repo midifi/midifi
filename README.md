@@ -74,8 +74,9 @@ $ fbuild --release
 Again, Windows doesn't work yet. But you can try building it anyway!
 
 Building on Windows is a tad *messy*. You **MUST** use Visual Studio and build in
-Debug mode! If you're building under Visual Studio 2015, comment out the lines that
-define `snprintf` in `fluidsynth/fluidsynth/src/config_win32.cmake`. Now, `cd` into
+Debug mode! If you're building under Visual Studio 2015, comment out the lines
+that define `snprintf` in `fluidsynth/fluidsynth/src/config_win32.cmake`. You also
+need to apply `fluidsynth_windows_patch.diff`. Now, `cd` into
 `fluidsynth\fluidsynth` and run:
 
 ```
@@ -99,4 +100,6 @@ msbuild ALL_BUILD.vcxproj
 After Fluidsynth builds, you need to locate `fluidsynth_*.lib` and
 `libfluidsynth_*.dll` (usually they're in `src\*`), where all the `*`'s are
 replaced by `debug` or `release`, and copy them to `fluidsynth/fluidsynth/src`
-under the names `fluidsynth.lib` and `fluidsynth.dll`, respectively.
+under the names `fluidsynth.lib` and `fluidsynth.dll`, respectively. Now you can
+follow the normal build directions, but note that building in release does NOT
+work (yet).
