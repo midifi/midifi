@@ -279,19 +279,19 @@ class Felix(fbuild.db.PersistentObject):
 @fbuild.db.caches
 def configure(ctx, release):
     config_kw = {}
-    cxxflags = []
+    wcxxflags = []
     if release:
         config_kw['optimize'] = True
-        cxxflags.append('/MT')
+        wcxxflags.append('/MT')
     else:
         config_kw['debug'] = True
-        cxxflags.append('/LDd')
+        wcxxflags.append('/LDd')
     felix = Felix(ctx, flags=ctx.options.flxflag, **config_kw)
     extra = felix.platform_extra
     kw = dict(platform_extra=extra, platform_options=[
-        ({'windows'}, {'flags+': ['/EHsc']}),
+        ({'windows'}, {'flags+': ['/EHsc']+wcxxflags}),
         ({'posix'}, {'flags+': ['-std=c++11']}),
-    ], flags=ctx.options.cxxflag+cxxflags, **config_kw)
+    ], flags=ctx.options.cxxflag, **config_kw)
     static = guess_static(ctx, **kw)
     shared = guess_shared(ctx, **kw)
     gen_fpc(ctx, static)
@@ -430,8 +430,12 @@ def copy_dll(ctx, fluid):
     return copy_dll2(ctx, dll)
 
 def build_midifile(ctx, rec):
-    builder = rec.shared if isinstance(rec.shared, MsvcBuilder) else rec.static
-    lflags = ['/DEBUG'] if not ctx.options.release else []
+    if isinstance(rec.shared, MsvcBuilder):
+        builder = rec.shared
+        lflags = ['/DEBUG'] if not ctx.options.release else []
+    else:
+        builder = rec.static
+        lflags = []
     return builder.build_lib('midifile',
         Path.glob('midifile/src-library/*.cpp'), includes=['midifile/include'],
         lflags=lflags)
