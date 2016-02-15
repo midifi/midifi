@@ -1,6 +1,6 @@
 [submodule "fluidsynth"]
 	path = fluidsynth
-	url = http://git.code.sf.net/p/fluidsynth/code-git
+	url = https://github.com/midifi/fluidsynth.git
 	ignore = dirty
 [submodule "sfml"]
 	path = sfml
