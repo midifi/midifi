@@ -65,7 +65,8 @@ extern "C" int midifi_event_callback(void* vdata, fluid_midi_event_t* event) {
         midifi_flx_event_callback(static_cast<thread_frame_t*>(data->ptf),
                                   type == NOTE_ON &&
                                       fluid_midi_event_get_velocity(event) != 0,
-                                  fluid_midi_event_get_key(event));
+                                  fluid_midi_event_get_key(event),
+                                  event->track);
     return fluid_synth_handle_midi_event(data->synth, event);
 }
 
@@ -136,6 +137,7 @@ void MidifiFluidData::setup_ticks() {
         event->dtime = 0;
         event->param1 = note;
         event->param2 = 100;
+        event->track = 0;
         fluid_track_add_event(track, event);
 
         event = new_fluid_midi_event();
@@ -144,6 +146,7 @@ void MidifiFluidData::setup_ticks() {
         event->dtime = tpq/4*deltatime-1;
         event->param1 = note;
         event->param2 = 0;
+        event->track = 0;
         fluid_track_add_event(track, event);
     }
 

@@ -37,9 +37,12 @@ var currently_pressed_keys: varray[int];
 numerator := 0;
 deltatime := 0.0f;
 initial_ms := 0.0f;
+track_count := 0;
 
+fun track_color(track: int) =>
+    track_colors.((track_count + track).size % track_colors.len);
 
-proc event_callback(is_on: bool, key: short) {
+proc event_callback(is_on: bool, key: short, track: int) {
     if key < 24s return;
     key' := key.int.fixed_key_number;
     i := let cur = unsafe_get (currently_pressed_keys, key'.size) in
@@ -47,7 +50,7 @@ proc event_callback(is_on: bool, key: short) {
     unsafe_set (currently_pressed_keys, key'.size, i);
 }
 
-export proc event_callback of (bool * short) as 'midifi_flx_event_callback';
+export proc event_callback of (bool * short * int) as 'midifi_flx_event_callback';
 
 
 fun seconds_to_ms(sec: double) => sec * 1000.0;
@@ -210,11 +213,12 @@ ctor NoteFall(midi: MidiFile::MidiFile) = {
 
     first_event := None[MidiEvent];
 
+    track_count = midi.ntracks;
     numerator = 0;
 
-    for var tn in 0 upto midi.ntracks - 1 do
+    for var tn in 0 upto track_count - 1 do
         track := #mkvec[RectangleShape];
-        color := track_colors.((midi.ntracks + tn).size % track_colors.len);
+        color := tn.track_color;
 
         evtloop:for var en in 0 upto (midi.nevents tn) - 1 do
             event := midi.[tn.size].[en.size];
