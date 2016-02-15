@@ -75,9 +75,8 @@ Again, Windows doesn't work yet. But you can try building it anyway!
 
 Building on Windows is a tad *messy*. You **MUST** use Visual Studio and build in
 Debug mode! If you're building under Visual Studio 2015, comment out the lines
-that define `snprintf` in `fluidsynth/fluidsynth/src/config_win32.cmake`. You also
-need to apply `fluidsynth_windows_patch.diff`. Now, `cd` into
-`fluidsynth\fluidsynth` and run:
+that define `snprintf` in `fluidsynth/fluidsynth/src/config_win32.cmake`. Now,
+`cd` into `fluidsynth\fluidsynth` and run:
 
 ```
 cmake -G "Visual Studio <version> <year>"
