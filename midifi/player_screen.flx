@@ -34,6 +34,7 @@ track_colors := varray[Color] (
 
 // We can't initialize these here because values hasn't been created yet.
 var currently_pressed_keys: varray[int];
+var key_colors: varray[Color];
 numerator := 0;
 deltatime := 0.0f;
 initial_ms := 0.0f;
@@ -48,6 +49,7 @@ proc event_callback(is_on: bool, key: short, track: int) {
     i := let cur = unsafe_get (currently_pressed_keys, key'.size) in
          if is_on then cur + 1 else cur - 1 endif;
     unsafe_set (currently_pressed_keys, key'.size, i);
+    if is_on call unsafe_set (key_colors, key'.size, track.track_color);
 }
 
 export proc event_callback of (bool * short * int) as 'midifi_flx_event_callback';
@@ -323,6 +325,7 @@ ctor Keyboard() = {
     self := Keyboard (#mkvec[int * RectangleShape], #mkvec[int * RectangleShape]);
 
     currently_pressed_keys = varray[int] (values.keys_to_show.size, 0);
+    key_colors = varray[Color] (values.keys_to_show.size, Colors::White);
 
     root:for var octave in 0 upto values.octaves_to_show perform
         for var ki in 0 upto values.keys_per_octave - 1 do
@@ -361,7 +364,7 @@ proc draw_key(index: int, var r: RectangleShape, w: RenderWindow, black: bool) {
     if #ms < initial_ms.uint do
         r&.set_fill_color default_color;
     elif unsafe_get (currently_pressed_keys, index.size) > 0 do
-        r&.set_fill_color Colors::Red;
+        r&.set_fill_color$ unsafe_get (key_colors, index.size);
     else
         r&.set_fill_color default_color;
     done

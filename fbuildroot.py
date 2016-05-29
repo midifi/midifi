@@ -122,8 +122,8 @@ def gen_midifile_fpc(ctx, cxx):
 
 @fbuild.db.caches
 def gen_fluid_fpc(ctx, cxx):
-    all_flags = '-I%s ' % ctx.buildroot
-    all_libs = ''
+    all_flags = '-I%s ' % ctx.buildroot.abspath()
+    all_libs = '-L%s ' % ctx.buildroot.abspath()
 
     for pkg in 'glib-2.0', 'gthread-2.0':
         cflags, libs = get_info_for(ctx, cxx, pkg, {})
