@@ -1,4 +1,4 @@
-#Midifi
+# Midifi
 
 Midifi is an open-source alternative to Synthesia written in Felix. Lots of stuff
 hasn't been finished yet, like:
@@ -9,7 +9,7 @@ hasn't been finished yet, like:
 
 However, it's great for casual use!
 
-##Video
+## Video
 
 <a href="http://www.youtube.com/watch?feature=player_embedded&v=76NMR497JK8"
  target="_blank">
@@ -17,30 +17,30 @@ However, it's great for casual use!
   width="240" height="180" border="10" />
 </a>
 
-##Downloading
+## Downloading
 
 If you're not a programmer and you use Windows, you don't need to mess with the
 directions below under `Building`. Just download and run the installer!
 
-##Using
+## Using
 
-###Windows
+### Windows
 
 Midifi does not work on Windows yet. See [issue #1](
 https://github.com/midifi/midifi/issues/1).
 
-###Linux
+### Linux
 
 You need to call midifi from the command line with the midi file as the argument.
 
-###Controls
+### Controls
 
 Once the file is playing, you can click "Pause" or press the space bar to pause the
 file. Clicking "Play" or pressing the space bar again will play it.
 
 Also, clicking the large, red "X" will close Midifi.
 
-##Building
+## Building
 
 You need the following:
 
@@ -69,7 +69,7 @@ To build in release mode:
 $ fbuild --release
 ```
 
-###Windows
+### Windows
 
 Again, Windows doesn't work yet. But you can try building it anyway!
 
